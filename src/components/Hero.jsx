@@ -27,11 +27,11 @@ export function Hero({ headline, subhead, ctaLabel }) {
           <div className="hero-text">
             <div className="pill">
               <span className="dot" aria-hidden="true">!</span>
-              Instagram hackeado ou suspenso? Aja agora
+              Suspensão indevida ou invasão? Aja agora
             </div>
             <h1 dangerouslySetInnerHTML={{ __html: headline }} />
             <p className="lead">{subhead}</p>
-            <a href="https://app.leadster.com.br/capture/gwesAHX1JB801Qre" target="_blank" rel="noopener" className="cta">
+            <a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">
               {ctaLabel}
               <Icons.Arrow />
             </a>
@@ -61,7 +61,7 @@ export function Hero({ headline, subhead, ctaLabel }) {
                   </div>
                   <div className="phone-card">
                     <div className="head">Notificação</div>
-                    <p className="phone-card-title">Seu Instagram foi suspenso</p>
+                    <p className="phone-card-title">Sua conta foi suspensa</p>
                     <div className="phone-bars">
                       <span></span><span></span><span></span>
                     </div>

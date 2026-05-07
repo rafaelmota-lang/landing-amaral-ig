@@ -43,7 +43,7 @@ export function WhyUs() {
           ))}
         </div>
         <div className="cta-block">
-          <a href="https://app.leadster.com.br/capture/gwesAHX1JB801Qre" target="_blank" rel="noopener" className="cta">Comece agora <Icons.Arrow /></a>
+          <a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Comece agora <Icons.Arrow /></a>
           <StarsRow />
         </div>
       </div>

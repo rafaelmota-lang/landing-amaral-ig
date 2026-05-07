@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 const faqs = [
   {
-    q: 'É possível recuperar uma conta hackeada judicialmente?',
-    a: 'Sim. Por meio de ação judicial com pedido liminar, um juiz pode determinar que a Meta restabeleça o acesso à sua conta em poucos dias. Esse caminho é especialmente eficaz quando os meios convencionais — suporte do aplicativo, verificação por selfie, e-mail — não funcionam.',
+    q: 'É possível recuperar uma conta hackeada ou suspensa indevidamente pela justiça?',
+    a: 'Sim. Por meio de ação judicial com pedido liminar, um juiz pode determinar que a Meta restabeleça o acesso à sua conta em poucos dias. Esse caminho é eficaz tanto em casos de invasão quanto de suspensão indevida pela plataforma — especialmente quando os meios convencionais (suporte do aplicativo, verificação por selfie, e-mail) não funcionam.',
   },
   {
     q: 'Quanto tempo demora para recuperar o acesso ao Instagram?',
@@ -20,6 +20,10 @@ const faqs = [
   {
     q: 'Como funciona o pagamento dos honorários?',
     a: 'Trabalhamos com modelos transparentes, ajustados ao perfil do seu caso. Na primeira conversa, apresentamos o orçamento de forma clara e sem surpresas.',
+  },
+  {
+    q: 'Mesmo sem ter sido hackeado consigo recorrer da suspensão?',
+    a: 'Sim. Mesmo quando o Instagram alega "violação dos termos de uso" e suspende a conta sem invasão de terceiros, é possível questionar judicialmente a proporcionalidade e a fundamentação da punição. Frequentemente as suspensões são aplicadas por erro do algoritmo ou por interpretação equivocada de denúncias.',
   },
 ];
 

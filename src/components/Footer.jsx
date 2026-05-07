@@ -15,7 +15,7 @@ export function Footer() {
             <ul>
               <li>contato@amaraladvogados.app</li>
               <li>(11) 99682-4517</li>
-              <li><a href="#contato">Formulário de atendimento</a></li>
+              <li><a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener">Fale conosco</a></li>
             </ul>
           </div>
           <div className="foot-col">

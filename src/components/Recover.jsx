@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Icons, StarsRow } from './Icons.jsx';
 
-const VIDEO_ID = 'ItwYkRaxXN4';
+const VIDEO_ID = 'KntuXLWLk0Q';
 
 export function Recover() {
   const [playing, setPlaying] = useState(false);
@@ -10,14 +10,14 @@ export function Recover() {
       title: 'Tente recuperar o acesso pelos canais oficiais do Instagram',
       paras: [
         'Use o recurso "Precisa de mais ajuda?" na tela de login e siga todos os passos indicados pelo aplicativo. Tente a verificação por selfie, SMS e e-mail.',
-        'Se a conta foi hackeada e o e-mail/telefone foram alterados, use o link enviado para o e-mail original (o Instagram envia um e-mail de segurança quando o endereço é trocado).',
+        'Em caso de invasão, verifique o e-mail de segurança que o Instagram envia quando o endereço cadastrado é alterado — o link de "reverter" pode restaurar seus dados originais.',
       ],
     },
     {
       title: 'Documente todas as tentativas sem sucesso',
       paras: [
-        'Salve capturas de tela de todos os passos que você tentou, incluindo mensagens de erro e respostas automáticas do suporte.',
-        'Anote datas, horários e números de protocolo. Essa documentação é essencial para comprovar que você esgotou os recursos disponíveis.',
+        'Salve capturas de tela de todos os passos que você tentou, incluindo mensagens de erro, e-mails do suporte e notificações de suspensão.',
+        'Anote datas, horários e números de protocolo. Essa documentação é essencial para comprovar judicialmente que você esgotou os recursos disponíveis.',
       ],
     },
     {
@@ -30,8 +30,8 @@ export function Recover() {
     {
       title: 'Acione a justiça com auxílio de um advogado especializado',
       paras: [
-        'Com a documentação em mãos, um advogado especialista em direito digital pode impetrar medida judicial com pedido liminar para forçar a Meta a restabelecer o acesso.',
-        'Dependendo do caso, é possível também requerer indenização por danos morais e materiais causados pela perda da conta.',
+        'Com a documentação em mãos, um advogado especialista em direito digital pode impetrar medida judicial com pedido liminar para forçar a Meta a restabelecer o acesso — tanto em casos de invasão quanto de suspensão indevida.',
+        'Dependendo do caso, é possível também requerer indenização por danos morais e materiais causados pela perda da conta (perda de seguidores, contratos, vendas ou renda).',
       ],
     },
   ];
@@ -81,7 +81,7 @@ export function Recover() {
           ))}
         </div>
         <div className="cta-block">
-          <a href="https://app.leadster.com.br/capture/gwesAHX1JB801Qre" target="_blank" rel="noopener" className="cta">Receba orientação especializada <Icons.Arrow /></a>
+          <a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Receba orientação especializada <Icons.Arrow /></a>
           <StarsRow />
         </div>
       </div>

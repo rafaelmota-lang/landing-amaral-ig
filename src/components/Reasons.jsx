@@ -3,19 +3,19 @@ import { Icons, StarsRow } from './Icons.jsx';
 export function Reasons() {
   const cards = [
     {
-      icon: <Icons.Lock />,
-      title: 'Conta hackeada',
-      text: 'Terceiros invadem o perfil, alteram e-mail, senha e número de telefone, tornando impossível a recuperação pelos meios convencionais do próprio Instagram.',
+      icon: <Icons.FileLine />,
+      title: 'Suspensão indevida pela plataforma',
+      text: 'O Instagram desativa contas alegando descumprimento de regras sem provas concretas. Em muitos casos a punição é desproporcional ou aplicada por engano e o usuário não consegue se defender.',
     },
     {
       icon: <Icons.Robot />,
-      title: 'Suspensão por erro do algoritmo',
+      title: 'Erro do algoritmo de moderação',
       text: 'O sistema automatizado identifica "atividade suspeita" de forma equivocada e remove perfis legítimos — mesmo sem qualquer violação real dos termos de uso.',
     },
     {
-      icon: <Icons.FileLine />,
-      title: 'Violação alegada dos Termos de Uso',
-      text: 'O Instagram alega descumprimento de regras sem apresentar provas concretas. Em muitos casos a punição é desproporcional ou aplicada por engano.',
+      icon: <Icons.Lock />,
+      title: 'Conta hackeada / invadida',
+      text: 'Terceiros invadem o perfil, alteram e-mail, senha e telefone, tornando praticamente impossível a recuperação pelos meios convencionais oferecidos pelo próprio Instagram.',
     },
   ];
   return (
@@ -37,7 +37,7 @@ export function Reasons() {
         </div>
         <p className="pre-cta">Sente que teve sua conta bloqueada ou invadida injustamente?</p>
         <div className="cta-block" style={{ marginTop: 0 }}>
-          <a href="https://app.leadster.com.br/capture/gwesAHX1JB801Qre" target="_blank" rel="noopener" className="cta">Converse sobre o seu caso <Icons.Arrow /></a>
+          <a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Converse sobre o seu caso <Icons.Arrow /></a>
           <StarsRow />
         </div>
       </div>

@@ -29,7 +29,7 @@ export function Lawyer() {
             <p className="bio">Formado em Direito pelo Centro Universitário Estácio do Ceará, é um estrategista digital apaixonado pelo direito e novas tecnologias. Atua como professor e advogado especialista na defesa do trabalhador e do consumidor frente às tecnologias modernas.</p>
             <div className="oab">OAB/CE 36.237</div>
             <div>
-              <a href="https://app.leadster.com.br/capture/gwesAHX1JB801Qre" target="_blank" rel="noopener" className="cta">Fale com o especialista <Icons.Arrow /></a>
+              <a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Fale com o especialista <Icons.Arrow /></a>
             </div>
           </div>
         </div>
