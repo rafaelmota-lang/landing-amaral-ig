@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.vite
+.DS_Store
+*.log
+_original
+lighthouse-*
+.env*

@@ -1,0 +1,22 @@
+{
+  "name": "landing-amaral-ml",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Landing page Amaral e Bohrer Advogados - Recuperação de contas no Mercado Livre",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node prerender.mjs",
+    "preview": "vite preview --port 4173",
+    "tweaks": "TWEAKS=1 vite",
+    "build:tweaks": "TWEAKS=1 vite build"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
+    "vite": "5.4.10"
+  }
+}
