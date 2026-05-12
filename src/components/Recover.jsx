@@ -81,7 +81,7 @@ export function Recover() {
           ))}
         </div>
         <div className="cta-block">
-          <a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Receba orientação especializada <Icons.Arrow /></a>
+          <a id="lead" href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Receba orientação especializada <Icons.Arrow /></a>
           <StarsRow />
         </div>
       </div>

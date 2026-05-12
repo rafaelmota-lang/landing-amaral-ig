@@ -31,7 +31,7 @@ export function Hero({ headline, subhead, ctaLabel }) {
             </div>
             <h1 dangerouslySetInnerHTML={{ __html: headline }} />
             <p className="lead">{subhead}</p>
-            <a href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">
+            <a id="lead" href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">
               {ctaLabel}
               <Icons.Arrow />
             </a>
