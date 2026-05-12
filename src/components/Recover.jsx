@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icons, StarsRow } from './Icons.jsx';
+import ytThumb from '../assets/yt-thumb.webp';
 
 const VIDEO_ID = 'KntuXLWLk0Q';
 
@@ -57,7 +58,7 @@ export function Recover() {
               aria-label="Assista: como recuperar sua conta - reproduzir vídeo"
             >
               <img
-                src={`https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg`}
+                src={ytThumb}
                 alt=""
                 width="480"
                 height="360"
