@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import preact from '@preact/preset-vite';
 
 const TWEAKS = process.env.TWEAKS === '1';
 
@@ -39,18 +39,27 @@ export default defineConfig({
   define: {
     __TWEAKS__: JSON.stringify(TWEAKS),
   },
+  resolve: {
+    alias: {
+      react: 'preact/compat',
+      'react-dom/client': 'preact/compat/client',
+      'react-dom/server': 'preact/compat/server',
+      'react-dom': 'preact/compat',
+      'react/jsx-runtime': 'preact/jsx-runtime',
+    },
+  },
   build: {
     target: 'es2020',
     cssMinify: true,
     minify: 'esbuild',
+    modulePreload: false,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('components/tweaks/')) return 'tweaks';
-          if (id.includes('node_modules/react')) return 'react';
         },
       },
     },
   },
-  plugins: [react(), inlineCss()],
+  plugins: [preact(), inlineCss()],
 });
