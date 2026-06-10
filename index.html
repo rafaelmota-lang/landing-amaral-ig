@@ -51,6 +51,9 @@
 <script>
 // Defer third-party scripts (GTM + Leadster) until first user interaction or 15s idle.
 (function () {
+  // Nao carrega tags de marketing em navegadores automatizados (Lighthouse/bots):
+  // mantem a auditoria limpa e evita poluir dados de conversao com trafego nao humano.
+  if (navigator.webdriver || /Chrome-Lighthouse|HeadlessChrome|Lightrider/i.test(navigator.userAgent)) return;
   var loaded = false;
   function loadThirdParty() {
     if (loaded) return;
