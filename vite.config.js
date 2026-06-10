@@ -49,7 +49,7 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'es2020',
+    target: 'es2022',
     cssMinify: true,
     minify: 'esbuild',
     modulePreload: false,
