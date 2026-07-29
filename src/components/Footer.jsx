@@ -34,7 +34,7 @@ export function Footer() {
           <span>OAB/CE 36.237</span>
         </div>
         <p className="foot-disclaimer">
-          Este site não faz parte do Google nem do Instagram, Facebook ou Meta Platforms, Inc. Não somos afiliados à Meta. Não oferecemos nenhum tipo de serviço oficial do governo e não praticamos fraude.
+          <strong>Este site pertence a um escritório de advocacia independente e não possui qualquer vínculo, afiliação, patrocínio ou autorização de Instagram, Facebook ou Meta Platforms, Inc., tampouco do Google.</strong> As marcas citadas pertencem aos seus respectivos titulares e são mencionadas apenas para descrever, de forma factual, o serviço jurídico oferecido. Não somos canal oficial de atendimento dessas plataformas e não intermediamos contato com elas. <strong>Este site não pratica phishing:</strong> não solicitamos senhas, códigos de verificação, dados de login ou quaisquer credenciais de acesso a plataformas, e não reproduzimos telas de login de terceiros. Os dados fornecidos destinam-se exclusivamente ao contato para prestação de serviços advocatícios. Não oferecemos serviço oficial do governo, não praticamos fraude e não comercializamos criptoativos.
         </p>
       </div>
     </footer>
