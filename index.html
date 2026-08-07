@@ -102,18 +102,27 @@
     })(window, document, 'https://cdn.leadster.com.br/neurolead/neurolead.min.js', 'uZJPeY5WloketnpEVfOGrm75q');
   }
 
-  // Conversoes. 'lead_created' e o evento registrado no painel do OpenAI Ads.
+  // Conversoes registradas no painel do OpenAI Ads:
+  //   'whatsapp' -> evento custom (ir para o WhatsApp: link direto ou envio do formulario)
+  //   'lead'     -> evento padrao lead_created (ida para a pagina de captura do Leadster)
   // track() tambem dispara o carregamento do SDK, cobrindo o caso em que o
   // clique na CTA e a primeira interacao do visitante na pagina.
-  // Dedupe por sessao: o mesmo visitante clicando na CTA e depois enviando o
-  // formulario e um lead so, nao dois.
-  function track(origem) {
+  // Dedupe por sessao e por tipo: o mesmo visitante repetindo a mesma acao
+  // conta uma vez, mas as duas conversoes distintas seguem sendo contadas.
+  function track(evento) {
     loadThirdParty();
     try {
-      if (sessionStorage.getItem('oaiq_lead')) return;
-      sessionStorage.setItem('oaiq_lead', origem);
+      var chave = 'oaiq_' + evento;
+      if (sessionStorage.getItem(chave)) return;
+      sessionStorage.setItem(chave, '1');
     } catch (e) {}
-    try { oaiq('measure', 'lead_created', { type: 'customer_action' }); } catch (e) {}
+    try {
+      if (evento === 'whatsapp') {
+        oaiq('measure', 'custom', { type: 'custom' }, { custom_event_name: 'whatsapp' });
+      } else {
+        oaiq('measure', 'lead_created', { type: 'customer_action' });
+      }
+    } catch (e) {}
   }
   window.__track = track;
 
@@ -122,7 +131,7 @@
     if (!el) return;
     var href = el.getAttribute('href') || '';
     if (href.indexOf('wa.me') > -1) track('whatsapp');
-    else if (href.indexOf('app.leadster.com.br') > -1) track('leadster');
+    else if (href.indexOf('app.leadster.com.br') > -1) track('lead');
   }, true);
 
   var events = ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'];
