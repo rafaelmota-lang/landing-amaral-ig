@@ -49,15 +49,32 @@
 </script>
 
 <script>
-// Defer third-party scripts (GTM + Leadster) until first user interaction or 15s idle.
+// Tags de marketing (GTM, Leadster, OpenAI Ads) + eventos de conversao.
 (function () {
   // Nao carrega tags de marketing em navegadores automatizados (Lighthouse/bots):
   // mantem a auditoria limpa e evita poluir dados de conversao com trafego nao humano.
   if (navigator.webdriver || /Chrome-Lighthouse|HeadlessChrome|Lightrider/i.test(navigator.userAgent)) return;
+
+  // Stub do pixel OpenAI Ads: enfileira eventos sem custo de rede, para que um
+  // clique ocorrido antes do SDK carregar nao seja perdido.
+  (function (w) {
+    if (w.oaiq) return;
+    var q = function () { q.q.push(arguments) };
+    q.q = [];
+    w.oaiq = q;
+  })(window);
+  oaiq('init', { pixelId: 'Na1vuxAvMs1hSiJ11vWSoL', debug: location.hostname === 'localhost' });
+
   var loaded = false;
   function loadThirdParty() {
     if (loaded) return;
     loaded = true;
+
+    // OpenAI Ads (consome a fila acumulada no stub)
+    var o = document.createElement('script');
+    o.async = true;
+    o.src = 'https://bzrcdn.openai.com/sdk/oaiq.min.js';
+    document.head.appendChild(o);
 
     // Google Tag Manager
     (function (w, d, s, l, i) {
@@ -84,6 +101,29 @@
       } catch (g) {}
     })(window, document, 'https://cdn.leadster.com.br/neurolead/neurolead.min.js', 'uZJPeY5WloketnpEVfOGrm75q');
   }
+
+  // Conversoes. 'lead_created' e o evento registrado no painel do OpenAI Ads.
+  // track() tambem dispara o carregamento do SDK, cobrindo o caso em que o
+  // clique na CTA e a primeira interacao do visitante na pagina.
+  // Dedupe por sessao: o mesmo visitante clicando na CTA e depois enviando o
+  // formulario e um lead so, nao dois.
+  function track(origem) {
+    loadThirdParty();
+    try {
+      if (sessionStorage.getItem('oaiq_lead')) return;
+      sessionStorage.setItem('oaiq_lead', origem);
+    } catch (e) {}
+    try { oaiq('measure', 'lead_created', { type: 'customer_action' }); } catch (e) {}
+  }
+  window.__track = track;
+
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!el) return;
+    var href = el.getAttribute('href') || '';
+    if (href.indexOf('wa.me') > -1) track('whatsapp');
+    else if (href.indexOf('app.leadster.com.br') > -1) track('leadster');
+  }, true);
 
   var events = ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'];
   events.forEach(function (ev) {
