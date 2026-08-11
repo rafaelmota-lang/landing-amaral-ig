@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mercadolivre.amaralebohrer.com.br/sitemap.xml
+Sitemap: https://instagram.amaralebohrer.com.br/sitemap.xml
