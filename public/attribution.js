@@ -21,6 +21,10 @@
  *   5. Nenhum endpoint real de producao vem embutido. `coreEndpoint` nasce null:
  *      sem configuracao explicita, o espelho fica DESLIGADO.
  *   6. Sem PII no armazenamento e sem PII para midia (contrato §6.1).
+ *   7. C3-CONTRACT-DECISION-PENDING: §1.5 e §4.2 sao incompativeis e o Gate ainda
+ *      NAO julgou. `politicaEventIdJornada` NAO TEM PADRAO. Sem decisao explicita,
+ *      este modulo FALHA FECHADO e nao emite evento canonico nenhum. Nenhuma das
+ *      duas candidatas e "a arquitetura aprovada".
  *
  * Sem dependencias. ES5. Funciona como <script src> classico e como modulo em
  * Node (para os testes), via `module.exports.create(win, config)`.
@@ -74,6 +78,22 @@
    * (contrato §1.2 gatilho (d)). Observados, nunca alterados. */
   var SINAIS_LEADSTER = ['Leadster-Lead', 'new_lead'];
 
+  /* ------------------------------------------------------------------ *
+   * C3-CONTRACT-DECISION-PENDING
+   *
+   * §1.5 e §4.2 do contrato congelado sao incompativeis entre si (ver
+   * BLOQUEIOS/CONTRATO-BLOQUEADO-C-3.md e
+   * measurement/contract-blockers/C3-event-id-reproduction.md).
+   *
+   * A Trilha C NAO escolhe a interpretacao. Este modulo aceita as duas
+   * alternativas candidatas e NAO TEM PADRAO: sem decisao explicita do Gate,
+   * ele FALHA FECHADO e nao emite nenhum evento canonico.
+   * ------------------------------------------------------------------ */
+  var CANDIDATE_A_LITERAL_CONTRACT = 'CANDIDATE_A_LITERAL_CONTRACT';
+  var CANDIDATE_B_DEDICATED_JOURNEY_ID = 'CANDIDATE_B_DEDICATED_JOURNEY_ID';
+  var CANDIDATAS_C3 = [CANDIDATE_A_LITERAL_CONTRACT, CANDIDATE_B_DEDICATED_JOURNEY_ID];
+  var C3_PENDENTE = 'C3-CONTRACT-DECISION-PENDING';
+
   var CHAVE_ATTRIBUTION = 'ab_attribution_v1';   // localStorage (contrato §3.2)
   var CHAVE_JORNADA = 'ab_journey_v1';           // sessionStorage (interno)
   var CHAVE_ENVIADOS = 'ab_sent_v1';             // sessionStorage (interno, dedupe)
@@ -124,9 +144,12 @@
     maxStorageBytes: 8192,
     journeyTtlMinutes: 360,
     dedupeWindowMs: 1800000,     // 30 min: janela de supressao de replay de evento
-    /* 'dedicado'  = id de jornada proprio (padrao; opcao 1 do CONTRATO-BLOQUEADO-C-3)
-     * 'primeiro_evento' = leitura literal de §1.5 (colide com §4.2; so para o Gate) */
-    politicaEventIdJornada: 'dedicado',
+    /* SEM PADRAO, de proposito. Valores aceitos:
+     *   'CANDIDATE_A_LITERAL_CONTRACT'      leitura literal de §1.5
+     *   'CANDIDATE_B_DEDICATED_JOURNEY_ID'  id de jornada dedicado
+     * Nenhuma das duas e "a arquitetura aprovada" ate o Gate julgar o C-3.
+     * null => FAIL CLOSED / CONFIGURATION REQUIRED. */
+    politicaEventIdJornada: null,
     gestureDedupeMs: 1500,       // um gesto = um evento canonico
     attributionTtlDays: null,    // LACUNA DECLARADA: contrato nao define retencao
     healthClusters: null,
@@ -311,7 +334,9 @@
       espelho_desligado: !cfg.coreEndpoint,
       pii_descartada: 0,
       observador_leadster: null,
-      listeners: null
+      listeners: null,
+      c3_status: null,
+      politica_event_id_jornada: cfg.politicaEventIdJornada || null
     };
 
     var tokenDaInstancia = 'ab-' + Math.random().toString(36).slice(2) + '-' + VERSION;
@@ -320,6 +345,26 @@
     var timerObservador = null;
     var cursorDataLayer = 0;
     var listenersLigados = false;
+
+    /* C3-CONTRACT-DECISION-PENDING — FAIL CLOSED / CONFIGURATION REQUIRED.
+     * Sem decisao do Gate, o modulo nao escolhe interpretacao e nao emite nada.
+     * Emitir so `page_view` (que nao depende do C-3) seria inventar uma TERCEIRA
+     * alternativa; o estado fica unico e inequivoco. */
+    function politicaC3Definida() {
+      return indexOf(CANDIDATAS_C3, cfg.politicaEventIdJornada) !== -1;
+    }
+
+    function reclamarConfiguracao(contexto) {
+      diagnostico.c3_status = C3_PENDENTE;
+      if (win.console && win.console.error) {
+        win.console.error('[attribution] ' + C3_PENDENTE + ': CONFIGURATION REQUIRED. ' +
+          'Nenhum evento canonico foi emitido em ' + contexto + '. ' +
+          'Defina AB_MEASUREMENT_CONFIG.politicaEventIdJornada como ' +
+          CANDIDATE_A_LITERAL_CONTRACT + ' ou ' + CANDIDATE_B_DEDICATED_JOURNEY_ID +
+          ' APOS o Gate julgar o CONTRATO-BLOQUEADO-C-3. A Trilha C nao tem padrao ' +
+          'porque a interpretacao de §1.5 x §4.2 nao foi decidida.');
+      }
+    }
 
     function log() {
       if (!cfg.debug || !win.console || !win.console.log) return;
@@ -691,19 +736,19 @@
      * descartado como replay: o lead nunca e criado. O mesmo vale para o dedupe
      * por event_id do Meta.
      *
-     * Politica padrao 'dedicado' (opcao 1 do bloqueio): o id de jornada e um
-     * identificador proprio, cunhado no primeiro evento do caminho de captacao,
-     * que viaja no `?eid=`/`ref` e vira o event_id das DUAS pernas de
-     * `lead_created`. Os demais eventos mantem envelope proprio.
+     * CANDIDATE_A_LITERAL_CONTRACT: o primeiro evento do caminho de captacao
+     * CARREGA o id de jornada como seu event_id de envelope.
+     * CANDIDATE_B_DEDICATED_JOURNEY_ID: o id de jornada e um identificador
+     * proprio; so `lead_created` (as duas pernas) o carrega como event_id.
      *
-     * Politica 'primeiro_evento': leitura literal de §1.5, disponivel para o Gate
-     * validar o defeito ou adotar a opcao 2 do bloqueio. NAO usar em producao.
+     * A Trilha C nao decide qual vale. Sem decisao configurada, `emitir()` nao
+     * chega ate aqui: o modulo ja falhou fechado.
      * ------------------------------------------------------------------ */
     function montarEnvelope(nome, extras) {
       var ownId = novoId();
       var jornada = null;
       if (indexOf(EVENTOS_JORNADA, nome) !== -1) jornada = garantirJornada();
-      var literal = cfg.politicaEventIdJornada === 'primeiro_evento';
+      var literal = cfg.politicaEventIdJornada === CANDIDATE_A_LITERAL_CONTRACT;
       var primeiroDaJornada = literal && !!jornada && jornadaSemEmissao(jornada);
       var eventId = (jornada && (nome === EV_LEAD_CREATED || primeiroDaJornada))
         ? jornada.id : ownId;
@@ -815,6 +860,7 @@
 
     function emitir(nome, opcoes) {
       opcoes = opcoes || {};
+      if (!politicaC3Definida()) { reclamarConfiguracao('emitir(' + nome + ')'); return null; }
       if (indexOf([EV_PAGE_VIEW, EV_WHATSAPP, EV_LEAD_STARTED, EV_LEAD_CREATED], nome) === -1) {
         log('evento fora da taxonomia canonica ignorado:', nome);
         return null;
@@ -1069,6 +1115,12 @@
         diagnostico.iniciado = 'pulado_automatizado';
         return api;
       }
+      if (!politicaC3Definida()) {
+        reclamarConfiguracao('init()');
+        diagnostico.iniciado = 'bloqueado_c3';
+        return api;      // nenhum listener, nenhum observador, nenhum evento
+      }
+      diagnostico.c3_status = 'DECIDIDO_POR_CONFIGURACAO: ' + cfg.politicaEventIdJornada;
       diagnostico.iniciado = true;
       iniciarAttribution();
       adotarEidDaUrl();
@@ -1091,6 +1143,10 @@
 
     var api = {
       VERSION: VERSION,
+      C3_PENDENTE: C3_PENDENTE,
+      CANDIDATE_A_LITERAL_CONTRACT: CANDIDATE_A_LITERAL_CONTRACT,
+      CANDIDATE_B_DEDICATED_JOURNEY_ID: CANDIDATE_B_DEDICATED_JOURNEY_ID,
+      politicaC3Definida: politicaC3Definida,
       init: init,
       destruir: destruir,
       config: cfg,
@@ -1171,7 +1227,10 @@
   /* ------------------------------- exportacao ------------------------------- */
 
   var modulo = { create: createAttribution, VERSION: VERSION,
-    CLUSTERS: CLUSTERS, CLUSTERS_SAUDE: CLUSTERS_SAUDE, AREAS: AREAS };
+    CLUSTERS: CLUSTERS, CLUSTERS_SAUDE: CLUSTERS_SAUDE, AREAS: AREAS,
+    CANDIDATE_A_LITERAL_CONTRACT: CANDIDATE_A_LITERAL_CONTRACT,
+    CANDIDATE_B_DEDICATED_JOURNEY_ID: CANDIDATE_B_DEDICATED_JOURNEY_ID,
+    C3_PENDENTE: C3_PENDENTE };
 
   if (typeof module === 'object' && module && module.exports) {
     module.exports = modulo;
