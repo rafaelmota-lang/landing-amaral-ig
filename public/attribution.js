@@ -2,9 +2,12 @@
  * attribution.js — FONTE CANONICA da camada de atribuicao e eventos canonicos.
  * Trilha C (mensuracao/migracao) · Amaral e Bohrer / Conversao Juridica
  *
- * Contratos implementados (CONTRATOS-CONGELADOS-v1.md):
- *   §1.1 envelope canonico · §1.2 os seis eventos · §1.5 event_id de jornada
- *   §3.1 objeto attribution · §3.2 regime WEB e decoracao ?eid=
+ * Contratos implementados:
+ * Contrato vigente: CONTRATOS-CONGELADOS-v2.md
+ * SHA256 641bc90ef782051cd5859036eb5363b2fd8e66ed984be6b4d56de4c6d6dad03e
+ *
+ *   §1.1 envelope canonico · §1.2 os seis eventos · §1.5 journey_id (E-1)
+ *   §3.1 objeto attribution com journey_id e eid_propagado tri-state (E-2)
  *   §3.3(a) `ref` em wa.me montado por codigo proprio · §3.4 formato do ref
  *   §5.1 I1/I2 (espelho ao lead-core, chave `k` no CORPO) · §6.1/§6.3 privacidade
  *
@@ -21,10 +24,11 @@
  *   5. Nenhum endpoint real de producao vem embutido. `coreEndpoint` nasce null:
  *      sem configuracao explicita, o espelho fica DESLIGADO.
  *   6. Sem PII no armazenamento e sem PII para midia (contrato §6.1).
- *   7. C3-CONTRACT-DECISION-PENDING: §1.5 e §4.2 sao incompativeis e o Gate ainda
- *      NAO julgou. `politicaEventIdJornada` NAO TEM PADRAO. Sem decisao explicita,
- *      este modulo FALHA FECHADO e nao emite evento canonico nenhum. Nenhuma das
- *      duas candidatas e "a arquitetura aprovada".
+ *   7. Identidade conforme CONTRATO v2 §1.5 (E-1), CONGELADO, decisao D-01:
+ *      `journey_id` dedicado. NAO ha configuracao de politica e NAO existe
+ *      caminho de producao para a leitura literal do v1.
+ *   8. Saude (v2 §6.1/§7, E-13/E-14): 6 clusters `saude=sim`. A perna de midia
+ *      perde cluster, area e campos de URL; varredura defensiva por lexico.
  *
  * Sem dependencias. ES5. Funciona como <script src> classico e como modulo em
  * Node (para os testes), via `module.exports.create(win, config)`.
@@ -52,12 +56,37 @@
     'bancarios,direitos-por-profissao,empregada-domestica,estabilidade-gestante,' +
     'motorista-caminhoneiro-motoboy,trabalho-sem-carteira-assinada').split(',');
 
-  /* Clusters com `saude = sim`. Contrato §6.1: cluster/area de saude NAO saem
-   * para plataforma de midia. Como o dataLayer alimenta GTM -> Meta/Google/OpenAI,
-   * o corte acontece na origem: o push canonico omite cluster/area nesses casos.
-   * A perna interna (lead-core) continua recebendo, por ser destino interno. */
+  /* Clusters com `saude = sim` no vocabulario v2 (contrato v2 §7 / E-14): os 4 de
+   * plano de saude MAIS `acidente-de-trabalho` e `estabilidade-gestante`, cujos
+   * ROTULOS revelam condicao de saude. Total: 6.
+   *
+   * Contrato v2 §6.1 (E-13): nada que revele condicao de saude sai para midia.
+   * Como o dataLayer alimenta GTM -> Meta/Google/OpenAI, o corte acontece na
+   * origem: a perna de midia perde `cluster`, `area` e os campos de URL que
+   * possam carregar slug revelador (`page`, `landing_page`). A perna interna
+   * (lead-core) continua recebendo, por ser destino interno (§6.3).
+   *
+   * ATENCAO: `vocabulario-clusters.csv` ainda esta na versao v1 (5 colunas, 4
+   * `saude=sim`). A reemissao v2 e o pre-requisito G-P1 do Gate, ainda nao
+   * executado. Esta lista segue o TEXTO NORMATIVO do contrato v2, que e superior
+   * ao dataset. Ver C-FIX-READINESS.md. */
   var CLUSTERS_SAUDE = ['medicamento-alto-custo-negado', 'plano-saude-lutecio-177',
-    'plano-saude-imunoglobulina', 'plano-saude-negativa-cobertura'];
+    'plano-saude-imunoglobulina', 'plano-saude-negativa-cobertura',
+    'acidente-de-trabalho', 'estabilidade-gestante'];
+
+  /* Lexico de saude para a varredura defensiva do payload de midia (E-13.6).
+   * Cobre tokens CLINICOS (o que o dataset da Trilha D usa em texto livre) e
+   * tokens de ROTULO (os nomes dos clusters saude=sim). */
+  var LEXICO_SAUDE = ['oncolog', 'doenca grave', 'gravidez', 'gestante', 'imunoglobulina',
+    'lutecio', 'quimioterap', 'diagnostic', 'sequela', 'medicamento', 'plano-saude',
+    'plano de saude', 'acidente-de-trabalho', 'acidente de trabalho', 'pericia medica',
+    'insalubridade', 'laudo medico', 'tratamento de saude', 'negativa de tratamento'];
+
+  /* Mapa de acentos usado para comparar o lexico sem depender de normalizacao
+   * Unicode (String.prototype.normalize nao existe em todo browser alvo do ES5). */
+  var ACENTOS = { 'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a', 'é': 'e', 'ê': 'e',
+    'ë': 'e', 'í': 'i', 'ï': 'i', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ú': 'u',
+    'ü': 'u', 'ç': 'c', 'ñ': 'n' };
 
   var AREAS = ['digital', 'trabalhista', 'previdenciario', 'civel', 'tributario',
     'saude', 'institucional', 'indefinida'];
@@ -79,20 +108,20 @@
   var SINAIS_LEADSTER = ['Leadster-Lead', 'new_lead'];
 
   /* ------------------------------------------------------------------ *
-   * C3-CONTRACT-DECISION-PENDING
+   * IDENTIDADE — CONTRATO v2 §1.5 (E-1), CONGELADO
    *
-   * §1.5 e §4.2 do contrato congelado sao incompativeis entre si (ver
-   * BLOQUEIOS/CONTRATO-BLOQUEADO-C-3.md e
-   * measurement/contract-blockers/C3-event-id-reproduction.md).
+   * O antigo CONTRATO-BLOQUEADO-C-3 foi JULGADO. Decisao D-01 do Gate Central:
+   * vencedora CANDIDATE_B_DEDICATED_JOURNEY_ID. Nao ha mais decisao pendente,
+   * nao ha mais fail-closed por C-3 e NAO EXISTE configuracao que selecione a
+   * leitura literal: ela nao e caminho de producao.
    *
-   * A Trilha C NAO escolhe a interpretacao. Este modulo aceita as duas
-   * alternativas candidatas e NAO TEM PADRAO: sem decisao explicita do Gate,
-   * ele FALHA FECHADO e nao emite nenhum evento canonico.
+   *   journey_id  UUID v4 DEDICADO, cunhado no 1o evento do caminho de captacao.
+   *               NAO e o event_id de envelope desse evento.
+   *   event_id    unico por OCORRENCIA de evento. Excecao unica e deliberada:
+   *               `lead_created` usa o journey_id como event_id nas DUAS pernas.
+   *   lead_id     ULID, gerado exclusivamente pelo lead-core. O browser nunca o vê.
    * ------------------------------------------------------------------ */
-  var CANDIDATE_A_LITERAL_CONTRACT = 'CANDIDATE_A_LITERAL_CONTRACT';
-  var CANDIDATE_B_DEDICATED_JOURNEY_ID = 'CANDIDATE_B_DEDICATED_JOURNEY_ID';
-  var CANDIDATAS_C3 = [CANDIDATE_A_LITERAL_CONTRACT, CANDIDATE_B_DEDICATED_JOURNEY_ID];
-  var C3_PENDENTE = 'C3-CONTRACT-DECISION-PENDING';
+  var POLITICA_IDENTIDADE = 'CANDIDATE_B_DEDICATED_JOURNEY_ID';   // §1.5 v2, congelado
 
   var CHAVE_ATTRIBUTION = 'ab_attribution_v1';   // localStorage (contrato §3.2)
   var CHAVE_JORNADA = 'ab_journey_v1';           // sessionStorage (interno)
@@ -144,12 +173,6 @@
     maxStorageBytes: 8192,
     journeyTtlMinutes: 360,
     dedupeWindowMs: 1800000,     // 30 min: janela de supressao de replay de evento
-    /* SEM PADRAO, de proposito. Valores aceitos:
-     *   'CANDIDATE_A_LITERAL_CONTRACT'      leitura literal de §1.5
-     *   'CANDIDATE_B_DEDICATED_JOURNEY_ID'  id de jornada dedicado
-     * Nenhuma das duas e "a arquitetura aprovada" ate o Gate julgar o C-3.
-     * null => FAIL CLOSED / CONFIGURATION REQUIRED. */
-    politicaEventIdJornada: null,
     gestureDedupeMs: 1500,       // um gesto = um evento canonico
     attributionTtlDays: null,    // LACUNA DECLARADA: contrato nao define retencao
     healthClusters: null,
@@ -335,8 +358,9 @@
       pii_descartada: 0,
       observador_leadster: null,
       listeners: null,
-      c3_status: null,
-      politica_event_id_jornada: cfg.politicaEventIdJornada || null
+      politica_identidade: POLITICA_IDENTIDADE,   // §1.5 v2, congelado; nao configuravel
+      saude_suprimida: 0,
+      lexico_saude_bloqueou: 0
     };
 
     var tokenDaInstancia = 'ab-' + Math.random().toString(36).slice(2) + '-' + VERSION;
@@ -346,24 +370,15 @@
     var cursorDataLayer = 0;
     var listenersLigados = false;
 
-    /* C3-CONTRACT-DECISION-PENDING — FAIL CLOSED / CONFIGURATION REQUIRED.
-     * Sem decisao do Gate, o modulo nao escolhe interpretacao e nao emite nada.
-     * Emitir so `page_view` (que nao depende do C-3) seria inventar uma TERCEIRA
-     * alternativa; o estado fica unico e inequivoco. */
-    function politicaC3Definida() {
-      return indexOf(CANDIDATAS_C3, cfg.politicaEventIdJornada) !== -1;
-    }
-
-    function reclamarConfiguracao(contexto) {
-      diagnostico.c3_status = C3_PENDENTE;
-      if (win.console && win.console.error) {
-        win.console.error('[attribution] ' + C3_PENDENTE + ': CONFIGURATION REQUIRED. ' +
-          'Nenhum evento canonico foi emitido em ' + contexto + '. ' +
-          'Defina AB_MEASUREMENT_CONFIG.politicaEventIdJornada como ' +
-          CANDIDATE_A_LITERAL_CONTRACT + ' ou ' + CANDIDATE_B_DEDICATED_JOURNEY_ID +
-          ' APOS o Gate julgar o CONTRATO-BLOQUEADO-C-3. A Trilha C nao tem padrao ' +
-          'porque a interpretacao de §1.5 x §4.2 nao foi decidida.');
-      }
+    /* O modulo so decora e so emite quando esta OPERACIONAL, isto e, depois de um
+     * `init()` bem-sucedido. Fora disso as funcoes publicas de decoracao devolvem a
+     * entrada intacta.
+     *
+     * Isso fecha o AC-1 do QA: sob `skipAutomated` (ou com `init()` nunca chamado),
+     * o formulario chamava `textoComRef()` e recebia um sufixo `[cod …]` ORFAO —
+     * um codigo de reconciliacao que nao correspondia a evento nenhum. */
+    function operacional() {
+      return diagnostico.iniciado === true;
     }
 
     function log() {
@@ -439,7 +454,10 @@
         click_ids: assign({}, atual.click_ids),
         touchpoints: [],
         event_id_origin: 'browser',
-        eid_propagado: false,
+        /* Contrato v2 §3.1 (E-2.2), tri-state por ESCRITOR: antes de existir
+         * jornada aberta o attribution.js emite `null`. `false` so passa a valer
+         * quando ha jornada aberta e nada foi propagado. Sticky uma vez `true`. */
+        eid_propagado: null,
         regime: atual.click_ids.ctwa_clid ? 'ctwa' : 'web'
       };
     }
@@ -536,7 +554,7 @@
         if (!has(attr.click_ids, CLICK_ID_KEYS[j])) attr.click_ids[CLICK_ID_KEYS[j]] = null;
       }
       if (attr.event_id_origin !== 'server') attr.event_id_origin = 'browser';
-      if (typeof attr.eid_propagado !== 'boolean') attr.eid_propagado = false;
+      if (typeof attr.eid_propagado !== 'boolean') attr.eid_propagado = null;
       if (indexOf(['web', 'ctwa', 'wa_link'], attr.regime) === -1) attr.regime = 'web';
       if (attributionExpirou(attr)) return { attr: null, estado: 'novo' };
       return { attr: attr, estado: estado };
@@ -567,8 +585,18 @@
       return attribution;
     }
 
-    /* Objeto emitido no envelope: exatamente as chaves do contrato §3.1. */
-    function attributionParaEnvelope() {
+    /* Objeto emitido no envelope: exatamente as chaves do contrato v2 §3.1.
+     *
+     * `journey_id` (E-2.1): UUID v4 quando ha jornada ABERTA e o evento e de
+     * jornada; `null` em `page_view` e em qualquer evento sem jornada aberta.
+     * O browser nunca emite envelope de server, entao aqui nunca ha o caso
+     * server/fallback — esse e null por construcao do lado do lead-core.
+     *
+     * `eid_propagado` (E-2.2): tri-state por escritor. `null` antes de existir
+     * jornada; `true`/`false` so com jornada aberta. Nunca inferido de outro campo. */
+    function attributionParaEnvelope(nomeEvento) {
+      var jornada = jornadaAtual();
+      var ehJornada = indexOf(EVENTOS_JORNADA, nomeEvento) !== -1;
       return {
         first_touch_at: attribution.first_touch_at,
         landing_page: attribution.landing_page,
@@ -576,15 +604,26 @@
         utm: assign({}, attribution.utm),
         click_ids: assign({}, attribution.click_ids),
         touchpoints: attribution.touchpoints.slice(0),
+        journey_id: (ehJornada && jornada) ? jornada.id : null,
         event_id_origin: attribution.event_id_origin,
-        eid_propagado: !!attribution.eid_propagado,
+        eid_propagado: jornada ? !!attribution.eid_propagado : null,
         regime: attribution.regime
       };
     }
 
+    /* Sticky: uma vez `true`, permanece `true` (contrato v2 §3.1 E-2.2). */
     function marcarPropagado() {
-      if (attribution && !attribution.eid_propagado) {
+      if (attribution && attribution.eid_propagado !== true) {
         attribution.eid_propagado = true;
+        salvarAttribution(attribution);
+      }
+    }
+
+    /* Quando a jornada abre sem nada ter sido propagado ainda, o campo sai de
+     * `null` (pre-jornada) para `false` (jornada aberta, nada propagado). */
+    function marcarJornadaAberta() {
+      if (attribution && attribution.eid_propagado === null) {
+        attribution.eid_propagado = false;
         salvarAttribution(attribution);
       }
     }
@@ -634,6 +673,7 @@
       var novo = { id: novoId(), started_at: isoComOffset(agora()), closed_at: null,
         origem: 'browser', emitted: {} };
       salvarJornada(novo);
+      marcarJornadaAberta();
       return novo;
     }
 
@@ -727,31 +767,21 @@
     }
 
     /* ------------------------------------------------------------------ *
-     * CONTRATO-BLOQUEADO-C-3 — ler antes de mexer.
+     * Contrato v2 §1.5 (E-1), congelado. Nao ha configuracao aqui.
      *
-     * §1.5 lido ao pe da letra diz que o event_id de jornada E o event_id de
-     * envelope do primeiro evento do caminho de captacao. Combinado com §4.2
-     * (chave unica = event_id; replay nao altera estado), isso faz o
-     * `lead_created` chegar ao lead-core com o MESMO id do `lead_started` e ser
-     * descartado como replay: o lead nunca e criado. O mesmo vale para o dedupe
-     * por event_id do Meta.
-     *
-     * CANDIDATE_A_LITERAL_CONTRACT: o primeiro evento do caminho de captacao
-     * CARREGA o id de jornada como seu event_id de envelope.
-     * CANDIDATE_B_DEDICATED_JOURNEY_ID: o id de jornada e um identificador
-     * proprio; so `lead_created` (as duas pernas) o carrega como event_id.
-     *
-     * A Trilha C nao decide qual vale. Sem decisao configurada, `emitir()` nao
-     * chega ate aqui: o modulo ja falhou fechado.
+     *   - todo evento carrega `event_id` de envelope PROPRIO e unico;
+     *   - EXCECAO UNICA: `lead_created` usa o `journey_id` como `event_id`, nas
+     *     duas pernas. E ela que faz browser e server colapsarem em UM evento no
+     *     lead-core (§4.2) e nas plataformas que deduplicam por event_id;
+     *   - `lead_started` e `lead_created` permanecem eventos distintos com ids
+     *     distintos: e isso que impede o segundo de ser descartado como replay
+     *     do primeiro (o defeito historico julgado em D-01).
      * ------------------------------------------------------------------ */
     function montarEnvelope(nome, extras) {
       var ownId = novoId();
       var jornada = null;
       if (indexOf(EVENTOS_JORNADA, nome) !== -1) jornada = garantirJornada();
-      var literal = cfg.politicaEventIdJornada === CANDIDATE_A_LITERAL_CONTRACT;
-      var primeiroDaJornada = literal && !!jornada && jornadaSemEmissao(jornada);
-      var eventId = (jornada && (nome === EV_LEAD_CREATED || primeiroDaJornada))
-        ? jornada.id : ownId;
+      var eventId = (jornada && nome === EV_LEAD_CREATED) ? jornada.id : ownId;
 
       var base = {
         event: nome,
@@ -767,9 +797,23 @@
       var envInterno = assign({}, base);
       if (c) { envInterno.cluster = c; if (!saude) envMidia.cluster = c; }
       if (a) { envInterno.area = a; if (!saude) envMidia.area = a; }
-      var attr = attributionParaEnvelope();
-      envMidia.attribution = attr;
+      var attr = attributionParaEnvelope(nome);
       envInterno.attribution = attr;
+      /* Contrato v2 §6.1 (E-13.1): em cluster de saude, alem de cluster/area, os
+       * campos de URL saem da perna de midia — o slug da money page revela a
+       * condicao tanto quanto o rotulo do cluster. A perna interna mantem tudo. */
+      if (saude) {
+        envMidia.page = null;
+        envMidia.attribution = assign({}, attr, {
+          landing_page: null,
+          touchpoints: attr.touchpoints.map(function (t) {
+            return assign({}, t, { landing_page: null });
+          })
+        });
+        diagnostico.saude_suprimida++;
+      } else {
+        envMidia.attribution = attr;
+      }
       /* PRIVACIDADE (contrato §6.1): o objeto `lead` carrega nome/telefone/email e
        * respostas de qualificacao. O dataLayer alimenta GTM -> Meta/Google/OpenAI,
        * entao `lead` NUNCA entra na perna de midia. Ele existe apenas na perna
@@ -787,8 +831,51 @@
       return win[nome];
     }
 
+    /* Varredura defensiva do payload de MIDIA (contrato v2 §6.1 E-13.6).
+     * Percorre todo valor de string do envelope — inclusive `page` e
+     * `landing_page` — procurando lexico clinico e tokens de rotulo. Achou,
+     * o campo e anulado antes do push e o contador sobe.
+     *
+     * E rede de seguranca, nao a regra principal: a regra e o carve-out por
+     * cluster. Esta varredura existe porque `cluster` nao e a unica porta. */
+    function semAcento(v) {
+      var saida = '';
+      for (var i = 0; i < v.length; i++) {
+        var ch = v.charAt(i);
+        saida += has(ACENTOS, ch) ? ACENTOS[ch] : ch;
+      }
+      return saida;
+    }
+
+    function contemTokenDeSaude(v) {
+      if (typeof v !== 'string' || !v) return false;
+      var alvo = semAcento(v.toLowerCase());
+      for (var i = 0; i < LEXICO_SAUDE.length; i++) {
+        if (alvo.indexOf(LEXICO_SAUDE[i]) !== -1) return true;
+      }
+      return false;
+    }
+
+    function higienizarParaMidia(obj) {
+      if (!obj || typeof obj !== 'object') return obj;
+      var saida = (Object.prototype.toString.call(obj) === '[object Array]') ? [] : {};
+      for (var k in obj) {
+        if (!has(obj, k)) continue;
+        var v = obj[k];
+        if (typeof v === 'string' && contemTokenDeSaude(v)) {
+          saida[k] = null;
+          diagnostico.lexico_saude_bloqueou++;
+        } else if (v && typeof v === 'object') {
+          saida[k] = higienizarParaMidia(v);
+        } else {
+          saida[k] = v;
+        }
+      }
+      return saida;
+    }
+
     function pushCanonico(envelope) {
-      dataLayer().push(envelope);
+      dataLayer().push(higienizarParaMidia(envelope));
     }
 
     /* ---------------------------- espelho ao lead-core ---------------------------- */
@@ -860,7 +947,6 @@
 
     function emitir(nome, opcoes) {
       opcoes = opcoes || {};
-      if (!politicaC3Definida()) { reclamarConfiguracao('emitir(' + nome + ')'); return null; }
       if (indexOf([EV_PAGE_VIEW, EV_WHATSAPP, EV_LEAD_STARTED, EV_LEAD_CREATED], nome) === -1) {
         log('evento fora da taxonomia canonica ignorado:', nome);
         return null;
@@ -946,11 +1032,19 @@
     /* Contrato §3.3(a)/§3.4: mensagem natural terminando em ` [cod <ref>]`.
      * Somente em wa.me montado por codigo proprio.                              */
 
+    /* AC-2 (QA): a checagem anterior procurava apenas o ref CORRENTE, entao uma
+     * mensagem que ja trazia `[cod A]` recebia um segundo `[cod B]` quando a
+     * jornada mudava (o `lead_created` fecha a jornada e o clique de fallback
+     * abria outra). Dois codigos na mesma mensagem quebram a reconciliacao do
+     * §3.4, que casa UM `[cod ([0-9a-f]{8})]`.
+     *
+     * Regra: se JA existe qualquer `[cod <8 hex>]` na mensagem, ela nao e tocada.
+     * O primeiro codigo vence — e ele que corresponde ao ato de captacao. */
     function textoComRef(mensagem, ref) {
-      var r = ref || refAtual();
-      if (!r) return mensagem || '';
       var base = String(mensagem || '');
-      if (new RegExp('\\[cod\\s+' + r + '\\]', 'i').test(base)) return base;  // nao duplica
+      if (/\[cod\s+[0-9a-f]{8}\]/i.test(base)) return base;   // nunca dois sufixos
+      var r = ref || refAtual();
+      if (!r) return base;
       return (base ? base.replace(/\s+$/, '') + ' ' : '') + '[cod ' + r + ']';
     }
 
@@ -1115,12 +1209,6 @@
         diagnostico.iniciado = 'pulado_automatizado';
         return api;
       }
-      if (!politicaC3Definida()) {
-        reclamarConfiguracao('init()');
-        diagnostico.iniciado = 'bloqueado_c3';
-        return api;      // nenhum listener, nenhum observador, nenhum evento
-      }
-      diagnostico.c3_status = 'DECIDIDO_POR_CONFIGURACAO: ' + cfg.politicaEventIdJornada;
       diagnostico.iniciado = true;
       iniciarAttribution();
       adotarEidDaUrl();
@@ -1143,10 +1231,8 @@
 
     var api = {
       VERSION: VERSION,
-      C3_PENDENTE: C3_PENDENTE,
-      CANDIDATE_A_LITERAL_CONTRACT: CANDIDATE_A_LITERAL_CONTRACT,
-      CANDIDATE_B_DEDICATED_JOURNEY_ID: CANDIDATE_B_DEDICATED_JOURNEY_ID,
-      politicaC3Definida: politicaC3Definida,
+      POLITICA_IDENTIDADE: POLITICA_IDENTIDADE,
+      operacional: operacional,
       init: init,
       destruir: destruir,
       config: cfg,
@@ -1174,20 +1260,29 @@
         }));
       },
 
-      /* utilitarios de decoracao, expostos para os formularios proprios */
+      /* Utilitarios de decoracao, expostos para os formularios proprios.
+       *
+       * AC-1 (QA): quando o modulo NAO esta operacional — `skipAutomated` ativo,
+       * `init()` nunca chamado — estas funcoes devolvem a entrada INTACTA. Antes
+       * elas cunhavam jornada e devolviam `[cod …]` mesmo sem nenhum evento ter
+       * sido emitido: um codigo de reconciliacao orfao, que chegava na conversa
+       * apontando para nada. */
       decorarUrl: function (url, eid) {
+        if (!operacional()) return url;
         var j = garantirJornada();
         var r = decorarUrl(url, eid || j.id);
         if (r !== url) marcarPropagado();
         return r;
       },
       textoComRef: function (msg, ref) {
+        if (!operacional()) return msg;
         garantirJornada();
         var r = textoComRef(msg, ref);
         if (r !== msg) marcarPropagado();
         return r;
       },
       decorarLinkWhatsapp: function (href, ref) {
+        if (!operacional()) return href;
         garantirJornada();
         var r = decorarLinkWhatsapp(href, ref);
         if (r !== href) marcarPropagado();
@@ -1209,6 +1304,9 @@
         lerJornada: lerJornada,
         salvarJornada: salvarJornada,
         varrerDataLayer: varrerDataLayer,
+        contemTokenDeSaude: contemTokenDeSaude,
+        higienizarParaMidia: higienizarParaMidia,
+        clusterEhSaude: clusterEhSaude,
         carregarAttribution: carregarAttribution,
         montarEnvelope: montarEnvelope,
         espelhar: espelhar,
@@ -1228,9 +1326,8 @@
 
   var modulo = { create: createAttribution, VERSION: VERSION,
     CLUSTERS: CLUSTERS, CLUSTERS_SAUDE: CLUSTERS_SAUDE, AREAS: AREAS,
-    CANDIDATE_A_LITERAL_CONTRACT: CANDIDATE_A_LITERAL_CONTRACT,
-    CANDIDATE_B_DEDICATED_JOURNEY_ID: CANDIDATE_B_DEDICATED_JOURNEY_ID,
-    C3_PENDENTE: C3_PENDENTE };
+    POLITICA_IDENTIDADE: POLITICA_IDENTIDADE,
+    LEXICO_SAUDE: LEXICO_SAUDE };
 
   if (typeof module === 'object' && module && module.exports) {
     module.exports = modulo;
