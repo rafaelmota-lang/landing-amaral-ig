@@ -18,11 +18,29 @@ export const WHATSAPP_POOL = [
   { numero: '5511972021019', peso: 1 }, // Disponivel - F - 1019
   { numero: '555180230806',  peso: 1 }, // Disponivel - F - 0806
 
-  // ATENÇÃO: este número NÃO tem conexão correspondente no Digisac (nenhuma
-  // conexão termina em 8173). Lead que cair aqui não é registrado no CRM.
-  // Confirmar antes de manter em produção.
+  // Este número não está no Digisac: está no Fluxo Jurídico (confirmado pelo dono
+  // em 2026-08-12). O lead É registrado, mas em OUTRO CRM — ver nota abaixo.
   { numero: '5511926878173', peso: 1 },
 ];
+
+// ---------------------------------------------------------------------------
+// NOTA: esta LP roteia para DOIS CRMs de WhatsApp diferentes.
+//
+//   5 números  -> Digisac  (tomazapp.digisac.app)
+//   1 número   -> Fluxo Jurídico (5511926878173)
+//
+// Consequências, para quem for mexer nisso depois:
+//   - não existe visão única do funil desta LP: o relatório precisa somar duas
+//     fontes, e "quantos leads esta página gerou" tem duas respostas parciais;
+//   - o coletor digisac-meta-capi, que manda desfecho de lead para a Meta CAPI,
+//     cobre só o lado Digisac. O lead que cair no Fluxo Jurídico fica fora da
+//     atribuição por lá;
+//   - o texto "#Meta - ..." da MENSAGEM_INICIAL é hoje o único marcador comum
+//     aos dois lados, e o visitante pode apagá-lo antes de enviar.
+//
+// Isso é fato do estado atual, não recomendação. A escolha de CRM oficial é a
+// decisão D1 de PENDENCIAS-PAINEIS.md, ainda em aberto.
+// ---------------------------------------------------------------------------
 
 export const MENSAGEM_INICIAL = '#Meta - Quero recuperar minha conta do Instagram';
 
