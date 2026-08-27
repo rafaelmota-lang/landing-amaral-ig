@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Icons, StarsRow } from './Icons.jsx';
 import ytThumb from '../assets/yt-thumb.webp';
+import { useWhatsAppLink } from '../useWhatsAppLink.js';
 
 const VIDEO_ID = 'KntuXLWLk0Q';
 
 export function Recover() {
+  const whatsappLink = useWhatsAppLink();
   const [playing, setPlaying] = useState(false);
   const steps = [
     {
@@ -82,7 +84,7 @@ export function Recover() {
           ))}
         </div>
         <div className="cta-block">
-          <a id="lead" href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Receba orientação especializada <Icons.Arrow /></a>
+          <a id="lead" href={whatsappLink} target="_blank" rel="noopener" className="cta">Receba orientação especializada <Icons.Arrow /></a>
           <StarsRow />
         </div>
       </div>

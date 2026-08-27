@@ -1,6 +1,8 @@
 import { Icons, StarsRow } from './Icons.jsx';
+import { useWhatsAppLink } from '../useWhatsAppLink.js';
 
 export function WhyUs() {
+  const whatsappLink = useWhatsAppLink();
   const cards = [
     {
       stat: '+',
@@ -43,7 +45,7 @@ export function WhyUs() {
           ))}
         </div>
         <div className="cta-block">
-          <a id="lead" href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Comece agora <Icons.Arrow /></a>
+          <a id="lead" href={whatsappLink} target="_blank" rel="noopener" className="cta">Comece agora <Icons.Arrow /></a>
           <StarsRow />
         </div>
       </div>

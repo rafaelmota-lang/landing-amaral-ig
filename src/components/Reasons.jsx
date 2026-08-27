@@ -1,6 +1,8 @@
 import { Icons, StarsRow } from './Icons.jsx';
+import { useWhatsAppLink } from '../useWhatsAppLink.js';
 
 export function Reasons() {
+  const whatsappLink = useWhatsAppLink();
   const cards = [
     {
       icon: <Icons.FileLine />,
@@ -37,7 +39,7 @@ export function Reasons() {
         </div>
         <p className="pre-cta">Sente que teve sua conta bloqueada ou invadida injustamente?</p>
         <div className="cta-block" style={{ marginTop: 0 }}>
-          <a id="lead" href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Converse sobre o seu caso <Icons.Arrow /></a>
+          <a id="lead" href={whatsappLink} target="_blank" rel="noopener" className="cta">Converse sobre o seu caso <Icons.Arrow /></a>
           <StarsRow />
         </div>
       </div>

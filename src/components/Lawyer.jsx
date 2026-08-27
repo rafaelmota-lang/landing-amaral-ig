@@ -2,8 +2,10 @@ import { Icons } from './Icons.jsx';
 import rafaelAvif from '../assets/rafael-mota-536.avif';
 import rafaelWebp from '../assets/rafael-mota-536.webp';
 import rafaelJpg from '../assets/rafael-mota-536.jpg';
+import { useWhatsAppLink } from '../useWhatsAppLink.js';
 
 export function Lawyer() {
+  const whatsappLink = useWhatsAppLink();
   return (
     <section className="section lawyer">
       <div className="wrap">
@@ -29,7 +31,7 @@ export function Lawyer() {
             <p className="bio">Formado em Direito pelo Centro Universitário Estácio do Ceará, é um estrategista digital apaixonado pelo direito e novas tecnologias. Atua como professor e advogado especialista na defesa do trabalhador e do consumidor frente às tecnologias modernas.</p>
             <div className="oab">OAB/CE 36.237</div>
             <div>
-              <a id="lead" href="https://app.leadster.com.br/capture/d7TGpeHYhhrspZ7i" target="_blank" rel="noopener" className="cta">Fale com o especialista <Icons.Arrow /></a>
+              <a id="lead" href={whatsappLink} target="_blank" rel="noopener" className="cta">Fale com o especialista <Icons.Arrow /></a>
             </div>
           </div>
         </div>
