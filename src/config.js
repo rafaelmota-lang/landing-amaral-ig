@@ -42,7 +42,13 @@ export const WHATSAPP_POOL = [
 // decisão D1 de PENDENCIAS-PAINEIS.md, ainda em aberto.
 // ---------------------------------------------------------------------------
 
-export const MENSAGEM_INICIAL = '#Meta - Quero recuperar minha conta do Instagram';
+import { ORIGENS, detectarOrigem, codigoDoClique } from './origem.js';
+
+export const ASSUNTO = 'Quero recuperar minha conta do Instagram';
+
+// Mensagem do HTML pré-renderizado da raiz. As páginas /google/ e /meta/ e o
+// sorteio real montam a mensagem no cliente, via montarLink().
+export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 const CHAVE_STICKY = 'ab_ig_wpp';
 
@@ -61,10 +67,20 @@ export function escolherNumero() {
   return escolhido;
 }
 
-export function montarLink(numero) {
-  return `https://wa.me/${numero}?text=${encodeURIComponent(MENSAGEM_INICIAL)}`;
+export function montarMensagem() {
+  const origem = detectarOrigem();
+  const tag = (ORIGENS[origem] || ORIGENS.site).tag;
+  return `${tag} - ${ASSUNTO}${codigoDoClique()}`;
 }
 
-// Link padrão usado no HTML pré-renderizado (o prerender roda sem localStorage).
-// O sorteio real acontece no cliente, via useWhatsAppLink.
-export const LEAD_URL = montarLink(WHATSAPP_POOL[0].numero);
+export function montarLink(numero) {
+  return `https://wa.me/${numero}?text=${encodeURIComponent(montarMensagem())}`;
+}
+
+// Link padrão do HTML pré-renderizado (o prerender roda sem localStorage).
+// É FUNÇÃO, não const: a mensagem depende da origem, e a origem só é conhecida
+// na hora do render — no build por variante, no cliente pelo pathname. Como
+// const, seria congelada no import e as três páginas sairiam com a mesma tag.
+export function linkPadrao() {
+  return montarLink(WHATSAPP_POOL[0].numero);
+}
