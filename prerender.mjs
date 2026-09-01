@@ -54,6 +54,9 @@ for (const v of VARIANTES) {
   if (mainJs && !saida.includes(`rel="modulepreload" href="${mainJs}"`)) {
     saida = saida.replace('</head>', `<link rel="modulepreload" href="${mainJs}" crossorigin>\n</head>`);
   }
+  // remove o canonical que veio do template base antes de injetar o nosso,
+  // senão a variante sai com duas tags canonical concorrentes.
+  saida = saida.replace(/\s*<link rel="canonical"[^>]*>/gi, '');
   saida = saida.replace(
     '</head>',
     `<meta name="robots" content="noindex, follow">\n<link rel="canonical" href="${CANONICAL}">\n</head>`

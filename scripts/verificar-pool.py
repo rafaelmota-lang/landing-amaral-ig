@@ -66,10 +66,11 @@ def main():
     conex = conexoes_digisac()
     print(f"LP: {LP}  bundle: {bundle}")
     print(f"numeros no pool em producao: {len(nums)}\n")
-    problemas = []
+    problemas, cegos = [], []
     for n in nums:
         if n in FORA_DO_DIGISAC:
-            print(f"  {n}  -- {FORA_DO_DIGISAC[n]} (fora do Digisac, nao verificavel aqui)")
+            cegos.append(n)
+            print(f"  {n}  ?? {FORA_DO_DIGISAC[n]} - NAO VERIFICAVEL por aqui")
             continue
         c = conex.get(n[-4:])
         if not c:
@@ -80,15 +81,24 @@ def main():
             print(f"  {n}  !! MORTO -> {c['nome']} | arquivada={c['arquivada']} | conectada={c['conectada']}")
         else:
             print(f"  {n}  ok -> {c['nome']}")
-    vivos = len(nums) - len(problemas)
-    print(f"\nvivos: {vivos}/{len(nums)}")
+
+    checaveis = len(nums) - len(cegos)
+    vivos = checaveis - len(problemas)
+    print(f"\nverificados vivos: {vivos}/{checaveis}   |   nao verificaveis: {len(cegos)}/{len(nums)}")
+
+    if cegos:
+        # Cobertura parcial nao pode ser reportada como "tudo certo": se o numero
+        # de fora cair, metade do trafego pago sangra sem ninguem ver.
+        print("  AVISO: a cobertura deste monitor e PARCIAL. Os numeros acima marcados")
+        print("  como nao verificaveis vivem fora do Digisac e precisam de teste manual.")
+
     if problemas:
         print("\n*** ACAO NECESSARIA: remover do pool em src/config.js e fazer Redeploy ***")
         for n, m in problemas:
             print(f"    {n}: {m}")
         return 1
-    if vivos == 0:
-        print("\n*** CRITICO: NENHUM numero vivo ***")
+    if vivos == 0 and checaveis > 0:
+        print("\n*** CRITICO: NENHUM numero verificavel esta vivo ***")
         return 1
     return 0
 
