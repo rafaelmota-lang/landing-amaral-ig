@@ -60,26 +60,55 @@ def sh(*a):
     return subprocess.run(a, capture_output=True, text=True, timeout=60).stdout
 
 
-def env(chave):
-    for linha in open(ENV, encoding="utf-8"):
-        if linha.startswith(chave + "="):
-            return linha.split("=", 1)[1].strip().strip('"').strip("'")
+def http(url, *extra, tolerar_vazio=False):
+    """GET que devolve texto. Tenta IPv4 antes do padrao do sistema.
+
+    O Cloudflare do Digisac responde 403 para o IPv6 do VPS e 200 para o IPv4
+    (medido em 2026-09-01). Sem o -4 o monitor morre no servidor e vive na
+    maquina do dono, que e o pior dos mundos: parece que funciona.
+    """
+    for args in (("-4",), ()):
+        out = sh("curl", "-s", "--max-time", "45", *args, *extra, url)
+        if out.strip():
+            return out
+    if tolerar_vazio:
+        return ""
+    raise RuntimeError(f"sem resposta de {url.split('?')[0]} (tentado IPv4 e IPv6)")
+
+
+def env(chave, arquivos=()):
+    """Valor de `chave`: variavel de ambiente primeiro, depois os arquivos.
+
+    A variavel de ambiente vem primeiro para o mesmo script rodar no Mac (que
+    le os .env dos projetos) e no VPS (que recebe tudo por EnvironmentFile).
+    """
+    if os.environ.get(chave):
+        return os.environ[chave]
+    for caminho in arquivos:
+        if not caminho or not os.path.exists(caminho):
+            continue
+        for linha in open(caminho, encoding="utf-8"):
+            if linha.startswith(chave + "="):
+                return linha.split("=", 1)[1].strip().strip('"').strip("'")
     return ""
 
 
 def numeros_em_producao():
-    html = sh("curl", "-s", "--compressed", "--max-time", "25", LP)
+    html = http(LP, "--compressed")
     m = re.search(r"/assets/index-[A-Za-z0-9_-]+\.js", html)
     if not m:
         raise SystemExit("ERRO: nao achei o bundle na LP")
-    js = sh("curl", "-s", "--compressed", "--max-time", "25", LP.rstrip("/") + m.group(0))
+    js = http(LP.rstrip("/") + m.group(0), "--compressed")
     return sorted(set(re.findall(r'numero:"(\d{12,13})"', js))), m.group(0)
 
 
 def conexoes_digisac():
-    base, tok = env("DIGISAC_BASE").rstrip("/"), env("DIGISAC_TOKEN")
-    d = json.loads(sh("curl", "-s", "--max-time", "45", "-H", f"Authorization: Bearer {tok}",
-                      base + "/services?perPage=200"))
+    base = env("DIGISAC_BASE", (ENV,)).rstrip("/")
+    tok = env("DIGISAC_TOKEN", (ENV,))
+    if not base or not tok:
+        raise SystemExit("ERRO: faltam DIGISAC_BASE/DIGISAC_TOKEN")
+    d = json.loads(http(base + "/services?perPage=200",
+                        "-H", f"Authorization: Bearer {tok}"))
     fora = {}
     for s in (d.get("data") or d):
         dig = re.sub(r"\D", "", s.get("name") or "")
@@ -98,24 +127,16 @@ def conexoes_digisac():
 def canais_fj():
     """(canais, erro). Só devolve canais se o token for do workspace certo."""
     try:
-        tok = ""
-        if not os.path.exists(ENV_FJ):
-            return [], f"nao existe {ENV_FJ} (guarde a chave do FJ ali, fora do repo publico)"
-        for linha in open(ENV_FJ, encoding="utf-8"):
-            if linha.startswith("FJ_TOKEN_AMARAL="):
-                tok = linha.split("=", 1)[1].strip().strip('"').strip("'")
-                break
+        tok = env("FJ_TOKEN_AMARAL", (ENV_FJ,))
         if not tok:
-            return [], f"falta FJ_TOKEN_AMARAL em {ENV_FJ}"
+            return [], f"falta FJ_TOKEN_AMARAL (env ou {ENV_FJ})"
 
-        me = json.loads(sh("curl", "-s", "--max-time", "20",
-                           "-H", f"Authorization: Bearer {tok}", BASE_FJ + "/me"))
+        me = json.loads(http(BASE_FJ + "/me", "-H", f"Authorization: Bearer {tok}"))
         ws = (((me.get("data") or {}).get("workspace") or {}).get("name")) or "?"
         if ws != WORKSPACE_FJ_ESPERADO:
             return [], f"token e do workspace '{ws}', esperado '{WORKSPACE_FJ_ESPERADO}'"
 
-        d = json.loads(sh("curl", "-s", "--max-time", "30",
-                          "-H", f"Authorization: Bearer {tok}", BASE_FJ + "/channels"))
+        d = json.loads(http(BASE_FJ + "/channels", "-H", f"Authorization: Bearer {tok}"))
         rows = d.get("data") if isinstance(d, dict) else d
         return [c for c in (rows or []) if c.get("channel_type") == "whatsapp"], None
     except Exception as e:
@@ -191,4 +212,10 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as e:
+        # Falha de rede/token nao pode virar traceback nem, muito menos, "OK".
+        print(f"\n*** VERIFICACAO NAO CONCLUSIVA: {e}")
+        print("    O pool pode estar bom ou ruim; este monitor nao conseguiu saber.")
+        sys.exit(2)
