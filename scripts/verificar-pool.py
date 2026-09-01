@@ -39,11 +39,20 @@ FORA_DO_DIGISAC = {"5511926878173": "Fluxo Juridico"}
 # workspace do Amaral e Bohrer, e vai em FJ_TOKEN_AMARAL no .env abaixo.
 WORKSPACE_FJ_ESPERADO = "Amaral e Bohrer Advogados"
 
-# Canal do 5511926878173, conferido no painel em 2026-09-01 (print do dono).
+# Canal do 5511926878173 no FJ. Como a API nao devolve o telefone do canal, o
+# casamento e pelo NOME, e nome muda. Entao aceita das duas formas:
+#   1. nome exato conhecido (lista abaixo);
+#   2. qualquer canal cujo nome contenha o final do numero, ex.
+#      "INSTAGRAM - 11 92687-8173". Essa e a forma robusta: se o canal for
+#      renomeado com o numero no nome, o monitor continua achando sozinho.
+#
 # CUIDADO: existe um canal de nome quase igual, "Amaral e Bohrer Advogados -
-# Rede Social" (+55 11 92687-8630, coexistencia), que estava DISCONNECTED
-# nessa mesma data. Nao e o nosso. O nosso e o "Redes Sociais", Z-API.
-CANAL_FJ_DO_NUMERO = "Amaral e Bohrer Advogados - Redes Sociais"
+# Rede Social" (+55 11 92687-8630, coexistencia), que estava DISCONNECTED em
+# 2026-09-01. Nao e o nosso. O nosso e o "Redes Sociais", Z-API, connected.
+# Por isso o match por numero usa o final 8173, que separa os dois.
+CANAIS_FJ_ACEITOS = [
+    "Amaral e Bohrer Advogados - Redes Sociais",   # nome em 2026-09-01
+]
 
 
 def sh(*a):
@@ -124,11 +133,21 @@ def main():
                 cegos.append(n)
                 print(f"  {n}  ?? {FORA_DO_DIGISAC[n]} - NAO VERIFICADO: {erro}")
                 continue
-            alvo = [c for c in canais if c.get("display_name") == CANAL_FJ_DO_NUMERO]
+            sufixo = n[-4:]
+            alvo = [c for c in canais
+                    if c.get("display_name") in CANAIS_FJ_ACEITOS
+                    or sufixo in re.sub(r"\D", "", c.get("display_name") or "")]
             if not alvo:
+                nomes = ", ".join(repr(c.get("display_name")) for c in canais)
                 cegos.append(n)
-                print(f"  {n}  ?? canal '{CANAL_FJ_DO_NUMERO}' nao existe mais no FJ "
-                      f"- NAO VERIFICADO (foi renomeado ou removido?)")
+                print(f"  {n}  ?? nenhum canal do FJ bate com este numero "
+                      f"- NAO VERIFICADO. Canais no workspace: {nomes}")
+                continue
+            if len(alvo) > 1:
+                nomes = ", ".join(repr(c.get("display_name")) for c in alvo)
+                cegos.append(n)
+                print(f"  {n}  ?? AMBIGUO: {len(alvo)} canais batem ({nomes}) "
+                      f"- NAO VERIFICADO, ajuste CANAIS_FJ_ACEITOS")
                 continue
             c = alvo[0]
             if c.get("status") != "connected":
