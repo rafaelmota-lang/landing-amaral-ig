@@ -18,8 +18,24 @@ import json, os, re, subprocess, sys, urllib.parse
 
 LP = "https://instagram.amaralebohrer.com.br/"
 ENV = os.path.expanduser("~/Sistemas/Projetos_Auxiliares/digisac-meta-capi/.env")
-# numeros que nao vivem no Digisac (outra plataforma): nao alarmar, mas listar
+ENV_FJ = os.path.expanduser("~/Sistemas/Paineis/painel-comercial-fj/backend/.env")
+BASE_FJ = "https://api.fluxojuridico.com.br/functions/v1/public-api"
+
+# Numeros que nao vivem no Digisac.
 FORA_DO_DIGISAC = {"5511926878173": "Fluxo Juridico"}
+
+# A API do FJ NAO expoe o telefone do canal: /channels devolve external_id (o
+# phone_number_id da WABA) e nem as mensagens inbound trazem display_phone_number.
+# Conferido em 2026-09-01. Entao nao da para amarrar 5511926878173 a um canal
+# por dados.
+#
+# Enquanto ninguem confirmar o nome exato no painel, o monitor cobre TODOS os
+# canais do FJ: se qualquer um cair, alarma. E conservador de proposito, prefere
+# alarme falso a deixar passar a queda do numero que leva metade do trafego pago.
+#
+# Para virar verificacao exata: preencher com o display_name do canal (um de
+# "Disparos - WABA", "RM EDUCACAO ONLINE", "Conversao Jurica").
+CANAL_FJ_DO_NUMERO = None
 
 
 def sh(*a):
@@ -61,6 +77,24 @@ def conexoes_digisac():
     return fora
 
 
+def canais_fj():
+    """Estado dos canais do Fluxo Juridico. [] se nao der para consultar."""
+    try:
+        tok = ""
+        for linha in open(ENV_FJ, encoding="utf-8"):
+            if re.match(r"^FJ_?(API_)?(TOKEN|KEY)=", linha):
+                tok = linha.split("=", 1)[1].strip().strip('"').strip("'")
+                break
+        if not tok:
+            return []
+        d = json.loads(sh("curl", "-s", "--max-time", "30",
+                          "-H", f"Authorization: Bearer {tok}", BASE_FJ + "/channels"))
+        rows = d.get("data") if isinstance(d, dict) else d
+        return [c for c in (rows or []) if c.get("channel_type") == "whatsapp"]
+    except Exception:
+        return []
+
+
 def main():
     nums, bundle = numeros_em_producao()
     conex = conexoes_digisac()
@@ -69,8 +103,23 @@ def main():
     problemas, cegos = [], []
     for n in nums:
         if n in FORA_DO_DIGISAC:
-            cegos.append(n)
-            print(f"  {n}  ?? {FORA_DO_DIGISAC[n]} - NAO VERIFICAVEL por aqui")
+            canais = canais_fj()
+            if not canais:
+                cegos.append(n)
+                print(f"  {n}  ?? {FORA_DO_DIGISAC[n]} - API nao respondeu, NAO VERIFICADO")
+                continue
+            alvo = [c for c in canais if c.get("display_name") == CANAL_FJ_DO_NUMERO] \
+                   if CANAL_FJ_DO_NUMERO else canais
+            caidos = [c for c in alvo if c.get("status") != "connected"]
+            nomes = ", ".join(f"{c.get('display_name')}={c.get('status')}" for c in caidos)
+            if caidos:
+                problemas.append((n, f"canal do FJ fora do ar: {nomes}"))
+                print(f"  {n}  !! Fluxo Juridico com canal caido -> {nomes}")
+            elif CANAL_FJ_DO_NUMERO:
+                print(f"  {n}  ok -> FJ '{CANAL_FJ_DO_NUMERO}' connected")
+            else:
+                print(f"  {n}  ok* -> FJ: os {len(alvo)} canais estao connected "
+                      f"(cobertura conservadora, canal exato nao confirmado)")
             continue
         c = conex.get(n[-4:])
         if not c:
