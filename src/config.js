@@ -11,16 +11,23 @@
 // por dois advogados diferentes).
 
 export const WHATSAPP_POOL = [
-  // Conferidos no Digisac em 2026-08-12: conectados e não arquivados.
-  { numero: '5551999711399', peso: 1 }, // RSOCIAL - Carla - F - 1399
-  { numero: '5511997571221', peso: 1 }, // Disponivel - F - 1221
-  { numero: '5511911581515', peso: 1 }, // Disponivel - F - 1515
-  { numero: '5511972021019', peso: 1 }, // Disponivel - F - 1019
-  { numero: '555180230806',  peso: 1 }, // Disponivel - F - 0806
+  // Conferidos no Digisac em 2026-08-31 23:xx: conectados e NAO arquivados.
+  { numero: '5551999711399', peso: 1 }, // Disponivel - F - 1399  (conectado)
+  { numero: '5511911581515', peso: 1 }, // Disponivel - F - 1515  (conectado)
+  { numero: '5511926878173', peso: 1 }, // Fluxo Juridico (fora do Digisac)
 
-  // Este número não está no Digisac: está no Fluxo Jurídico (confirmado pelo dono
-  // em 2026-08-12). O lead É registrado, mas em OUTRO CRM — ver nota abaixo.
-  { numero: '5511926878173', peso: 1 },
+  // ---------------------------------------------------------------------
+  // REMOVIDOS EM 2026-08-31 — ARQUIVADOS E DESCONECTADOS NO DIGISAC.
+  // Estavam "Disponivel / isConnected=true" quando o pool foi montado de
+  // manha; a noite apareceram arquivados. Enquanto estiveram no pool,
+  // ~50% dos leads pagos foram para WhatsApp morto.
+  //   { numero: '5511997571221' },  // Disponivel - F - 1221  ARQUIVADO
+  //   { numero: '5511972021019' },  // Disponivel - F - 1019  ARQUIVADO
+  //   { numero: '555180230806'  },  // Disponivel - F - 0806  ARQUIVADO
+  //
+  // ANTES DE REATIVAR QUALQUER UM: conferir isConnected=true E archivedAt=null
+  // em GET /services do Digisac. Nao basta o numero existir.
+  // ---------------------------------------------------------------------
 ];
 
 // ---------------------------------------------------------------------------
@@ -50,7 +57,7 @@ export const ASSUNTO = 'Quero recuperar minha conta do Instagram';
 // sorteio real montam a mensagem no cliente, via montarLink().
 export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
-const CHAVE_STICKY = 'ab_ig_wpp';
+const CHAVE_STICKY = 'ab_ig_wpp_v2';  // v2: invalida o sticky antigo, que prendia visitantes nos numeros arquivados
 
 export function escolherNumero() {
   try {
