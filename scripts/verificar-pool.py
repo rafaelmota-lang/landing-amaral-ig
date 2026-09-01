@@ -23,6 +23,7 @@ import json, os, re, subprocess, sys, urllib.parse
 LPS = [
     ("Instagram",     "https://instagram.amaralebohrer.com.br/"),
     ("Mercado Livre", "https://ml.amaralebohrer.com.br/"),
+    ("Shopee",        "https://shopee.amaralebohrer.com.br/"),
 ]
 ENV = os.path.expanduser("~/Sistemas/Projetos_Auxiliares/digisac-meta-capi/.env")
 # Segredos ficam FORA deste repositorio: ele e publico no GitHub.
@@ -65,7 +66,7 @@ WORKSPACE_FJ_ESPERADO = "Amaral e Bohrer Advogados"
 # final de 4 digitos dentro do nome do canal.
 CANAIS_FJ_ACEITOS = {
     "5511926878173": ["Amaral e Bohrer Advogados - Redes Sociais"],   # LP Instagram
-    "5511926471049": ["Amaral e Bohrer Advogados - Mercado Livre"],   # LP Mercado Livre
+    "5511926471049": ["Amaral e Bohrer Advogados - Mercado Livre"],   # LPs Mercado Livre E Shopee
 }
 
 
