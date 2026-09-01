@@ -88,23 +88,14 @@
       f.parentNode.insertBefore(j, f);
     })(window, document, 'script', 'dataLayer', 'GTM-NVLGQCR');
 
-    // Leadster
-    (function (a, b, c, d) {
-      try {
-        var e = b.head || b.getElementsByTagName('head')[0];
-        var f = b.createElement('script');
-        f.setAttribute('src', c);
-        f.setAttribute('charset', 'UTF-8');
-        f.defer = true;
-        a.neuroleadId = d;
-        e.appendChild(f);
-      } catch (g) {}
-    })(window, document, 'https://cdn.leadster.com.br/neurolead/neurolead.min.js', 'uZJPeY5WloketnpEVfOGrm75q');
+    // Leadster removido em 2026-09-01: a LP nao usa mais pagina de captura
+    // nem chat flutuante. Todo CTA vai direto para o WhatsApp.
   }
 
   // Conversoes registradas no painel do OpenAI Ads:
   //   'whatsapp' -> evento custom (ir para o WhatsApp: link direto ou envio do formulario)
-  //   'lead'     -> evento padrao lead_created (ida para a pagina de captura do Leadster)
+  // O evento 'lead_created' saiu junto com o Leadster: nao existe mais pagina
+  // de captura nesta LP, entao o unico caminho de conversao e o WhatsApp.
   // track() tambem dispara o carregamento do SDK, cobrindo o caso em que o
   // clique na CTA e a primeira interacao do visitante na pagina.
   // Dedupe por sessao e por tipo: o mesmo visitante repetindo a mesma acao
@@ -131,7 +122,6 @@
     if (!el) return;
     var href = el.getAttribute('href') || '';
     if (href.indexOf('wa.me') > -1) track('whatsapp');
-    else if (href.indexOf('app.leadster.com.br') > -1) track('lead');
   }, true);
 
   var events = ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'];
