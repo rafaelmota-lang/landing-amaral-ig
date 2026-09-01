@@ -11,19 +11,29 @@ O QUE FAZ: le o bundle publicado (a verdade, nao o repo), extrai os numeros do
 pool e cruza com GET /services do Digisac. Falha se algum estiver arquivado,
 desconectado ou ausente.
 
+Cobre TODAS as LPs listadas em LPS, nao so uma: em 2026-09-01 a LP do Mercado
+Livre foi encontrada com os DOIS numeros do formulario arquivados, sangrando ha
+tempo indeterminado, justamente por estar fora do monitor.
+
 Uso:  python3 verificar-pool.py
-Saida: 0 = tudo ok | 1 = PROBLEMA (algum numero morto)
+Saida: 0 = tudo ok | 1 = PROBLEMA (algum numero morto) | 2 = nao conclusivo
 """
 import json, os, re, subprocess, sys, urllib.parse
 
-LP = "https://instagram.amaralebohrer.com.br/"
+LPS = [
+    ("Instagram",     "https://instagram.amaralebohrer.com.br/"),
+    ("Mercado Livre", "https://ml.amaralebohrer.com.br/"),
+]
 ENV = os.path.expanduser("~/Sistemas/Projetos_Auxiliares/digisac-meta-capi/.env")
 # Segredos ficam FORA deste repositorio: ele e publico no GitHub.
 ENV_FJ = os.path.expanduser("~/.config/verificar-pool/.env")
 BASE_FJ = "https://api.fluxojuridico.com.br/functions/v1/public-api"
 
 # Numeros que nao vivem no Digisac.
-FORA_DO_DIGISAC = {"5511926878173": "Fluxo Juridico"}
+FORA_DO_DIGISAC = {
+    "5511926878173": "Fluxo Juridico",
+    "5511926471049": "Fluxo Juridico",
+}
 
 # ---------------------------------------------------------------------------
 # O FJ E MULTI-WORKSPACE. Uma API key so enxerga o workspace dela.
@@ -51,9 +61,12 @@ WORKSPACE_FJ_ESPERADO = "Amaral e Bohrer Advogados"
 # Rede Social" (+55 11 92687-8630, coexistencia), que estava DISCONNECTED em
 # 2026-09-01. Nao e o nosso. O nosso e o "Redes Sociais", Z-API, connected.
 # Por isso o match por numero usa o final 8173, que separa os dois.
-CANAIS_FJ_ACEITOS = [
-    "Amaral e Bohrer Advogados - Redes Sociais",   # nome em 2026-09-01
-]
+# Nome do canal por numero. Se o numero nao estiver aqui, o match cai no
+# final de 4 digitos dentro do nome do canal.
+CANAIS_FJ_ACEITOS = {
+    "5511926878173": ["Amaral e Bohrer Advogados - Redes Sociais"],   # LP Instagram
+    "5511926471049": ["Amaral e Bohrer Advogados - Mercado Livre"],   # LP Mercado Livre
+}
 
 
 def sh(*a):
@@ -93,7 +106,7 @@ def env(chave, arquivos=()):
     return ""
 
 
-def numeros_em_producao():
+def numeros_em_producao(LP):
     html = http(LP, "--compressed")
     m = re.search(r"/assets/index-[A-Za-z0-9_-]+\.js", html)
     if not m:
@@ -143,22 +156,33 @@ def canais_fj():
         return [], f"erro ao consultar o FJ: {e}"
 
 
-def main():
-    nums, bundle = numeros_em_producao()
-    conex = conexoes_digisac()
-    print(f"LP: {LP}  bundle: {bundle}")
-    print(f"numeros no pool em producao: {len(nums)}\n")
+def verificar_lp(nome_lp, url, conex, cache_fj):
+    """Checa uma LP. Devolve (problemas, cegos, total_de_numeros)."""
+    nums, bundle = numeros_em_producao(url)
+    print(f"\n### {nome_lp}  ({url})")
+    print(f"    bundle: {bundle} | {len(nums)} numero(s) no pool\n")
     problemas, cegos = [], []
+
+    # Zero numero NAO e sinal de saude: ou o deploy dessa LP ainda nao saiu, ou
+    # o padrao do bundle mudou e a extracao parou de funcionar. Nos dois casos o
+    # monitor esta cego para essa LP, e cego tem que gritar, nao ficar quieto.
+    if not nums:
+        print(f"  ?? NENHUM numero encontrado no bundle desta LP - MONITOR CEGO AQUI.")
+        print(f"     Ou a LP nao usa o pool (deploy pendente), ou a extracao quebrou.")
+        return [], ["<lp-sem-numeros:" + nome_lp + ">"], 0
+
     for n in nums:
         if n in FORA_DO_DIGISAC:
-            canais, erro = canais_fj()
+            if cache_fj["dados"] is None:
+                cache_fj["dados"] = canais_fj()
+            canais, erro = cache_fj["dados"]
             if erro:
                 cegos.append(n)
                 print(f"  {n}  ?? {FORA_DO_DIGISAC[n]} - NAO VERIFICADO: {erro}")
                 continue
             sufixo = n[-4:]
             alvo = [c for c in canais
-                    if c.get("display_name") in CANAIS_FJ_ACEITOS
+                    if c.get("display_name") in CANAIS_FJ_ACEITOS.get(n, [])
                     or sufixo in re.sub(r"\D", "", c.get("display_name") or "")]
             if not alvo:
                 nomes = ", ".join(repr(c.get("display_name")) for c in canais)
@@ -174,7 +198,7 @@ def main():
                 continue
             c = alvo[0]
             if c.get("status") != "connected":
-                problemas.append((n, f"canal FJ '{c['display_name']}' status={c.get('status')}"))
+                problemas.append((nome_lp, n, f"canal FJ '{c['display_name']}' status={c.get('status')}"))
                 print(f"  {n}  !! MORTO -> FJ '{c['display_name']}' status={c.get('status')}")
             else:
                 print(f"  {n}  ok -> FJ '{c['display_name']}' connected")
@@ -182,28 +206,45 @@ def main():
 
         c = conex.get(n[-4:])
         if not c:
-            problemas.append((n, "SEM CONEXAO no Digisac"))
+            problemas.append((nome_lp, n, "SEM CONEXAO no Digisac"))
             print(f"  {n}  !! SEM CONEXAO no Digisac")
         elif c["arquivada"] or c["conectada"] is not True:
-            problemas.append((n, f"{c['nome']} arquivada={c['arquivada']} conectada={c['conectada']}"))
+            problemas.append((nome_lp, n, f"{c['nome']} arquivada={c['arquivada']} conectada={c['conectada']}"))
             print(f"  {n}  !! MORTO -> {c['nome']} | arquivada={c['arquivada']} | conectada={c['conectada']}")
         else:
             print(f"  {n}  ok -> {c['nome']}")
 
-    checaveis = len(nums) - len(cegos)
+    # Uma LP sem NENHUM numero vivo esta queimando 100% da verba dela.
+    if nums and len(problemas) == len(nums):
+        print(f"  *** {nome_lp}: NENHUM numero vivo, a LP inteira esta no vazio ***")
+    return problemas, cegos, len(nums)
+
+
+def main():
+    conex = conexoes_digisac()
+    cache_fj = {"dados": None}   # o FJ e consultado uma vez, nao por LP
+    problemas, cegos, total = [], [], 0
+
+    for nome_lp, url in LPS:
+        p, c, t = verificar_lp(nome_lp, url, conex, cache_fj)
+        problemas += p
+        cegos += c
+        total += t
+
+    checaveis = total - len(cegos)
     vivos = checaveis - len(problemas)
-    print(f"\nverificados vivos: {vivos}/{checaveis}   |   nao verificaveis: {len(cegos)}/{len(nums)}")
+    print(f"\n{'='*58}")
+    print(f"{len(LPS)} LPs | verificados vivos: {vivos}/{checaveis} | nao verificaveis: {len(cegos)}/{total}")
 
     if cegos:
-        # Cobertura parcial nao pode ser reportada como "tudo certo": se o numero
-        # de fora cair, metade do trafego pago sangra sem ninguem ver.
-        print("  AVISO: a cobertura deste monitor e PARCIAL. Os numeros acima marcados")
-        print("  como nao verificaveis vivem fora do Digisac e precisam de teste manual.")
+        # Cobertura parcial nao pode ser reportada como "tudo certo".
+        print("  AVISO: cobertura PARCIAL. Os numeros marcados como nao verificaveis")
+        print("  precisam de teste manual.")
 
     if problemas:
         print("\n*** ACAO NECESSARIA: remover do pool em src/config.js e fazer Redeploy ***")
-        for n, m in problemas:
-            print(f"    {n}: {m}")
+        for lp, n, m in problemas:
+            print(f"    [{lp}] {n}: {m}")
         return 1
     if vivos == 0 and checaveis > 0:
         print("\n*** CRITICO: NENHUM numero verificavel esta vivo ***")
