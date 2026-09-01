@@ -18,7 +18,8 @@ import json, os, re, subprocess, sys, urllib.parse
 
 LP = "https://instagram.amaralebohrer.com.br/"
 ENV = os.path.expanduser("~/Sistemas/Projetos_Auxiliares/digisac-meta-capi/.env")
-ENV_FJ = os.path.expanduser("~/Sistemas/Paineis/painel-comercial-fj/backend/.env")
+# Segredos ficam FORA deste repositorio: ele e publico no GitHub.
+ENV_FJ = os.path.expanduser("~/.config/verificar-pool/.env")
 BASE_FJ = "https://api.fluxojuridico.com.br/functions/v1/public-api"
 
 # Numeros que nao vivem no Digisac.
@@ -98,13 +99,14 @@ def canais_fj():
     """(canais, erro). Só devolve canais se o token for do workspace certo."""
     try:
         tok = ""
+        if not os.path.exists(ENV_FJ):
+            return [], f"nao existe {ENV_FJ} (guarde a chave do FJ ali, fora do repo publico)"
         for linha in open(ENV_FJ, encoding="utf-8"):
             if linha.startswith("FJ_TOKEN_AMARAL="):
                 tok = linha.split("=", 1)[1].strip().strip('"').strip("'")
                 break
         if not tok:
-            return [], ("falta FJ_TOKEN_AMARAL no .env do painel-comercial-fj "
-                        "(a chave existente e do workspace Conversao Juridica)")
+            return [], f"falta FJ_TOKEN_AMARAL em {ENV_FJ}"
 
         me = json.loads(sh("curl", "-s", "--max-time", "20",
                            "-H", f"Authorization: Bearer {tok}", BASE_FJ + "/me"))
