@@ -52,22 +52,18 @@ FORA_DO_DIGISAC = {
 # workspace do Amaral e Bohrer, e vai em FJ_TOKEN_AMARAL no .env abaixo.
 WORKSPACE_FJ_ESPERADO = "Amaral e Bohrer Advogados"
 
-# Canal do 5511926878173 no FJ. Como a API nao devolve o telefone do canal, o
-# casamento e pelo NOME, e nome muda. Entao aceita das duas formas:
-#   1. nome exato conhecido (lista abaixo);
-#   2. qualquer canal cujo nome contenha o final do numero, ex.
-#      "INSTAGRAM - 11 92687-8173". Essa e a forma robusta: se o canal for
-#      renomeado com o numero no nome, o monitor continua achando sozinho.
+# Canal do FJ por numero, casado pelo ID.
 #
-# CUIDADO: existe um canal de nome quase igual, "Amaral e Bohrer Advogados -
-# Rede Social" (+55 11 92687-8630, coexistencia), que estava DISCONNECTED em
-# 2026-09-01. Nao e o nosso. O nosso e o "Redes Sociais", Z-API, connected.
-# Por isso o match por numero usa o final 8173, que separa os dois.
-# Nome do canal por numero. Se o numero nao estiver aqui, o match cai no
-# final de 4 digitos dentro do nome do canal.
-CANAIS_FJ_ACEITOS = {
-    "5511926878173": ["Amaral e Bohrer Advogados - Redes Sociais"],   # LP Instagram
-    "5511926471049": ["Amaral e Bohrer Advogados - Mercado Livre"],   # LPs Mercado Livre E Shopee
+# O casamento era por NOME e quebrou em 2026-09-02: os canais foram renomeados
+# ("Amaral e Bohrer Advogados - Redes Sociais" virou "Z-API - Redes Sociais") e
+# o monitor passou a dizer NAO VERIFICADO para os dois numeros. O ID nao muda
+# com rename, entao e por ele que se casa agora.
+#
+# Os IDs abaixo foram confirmados comparando a lista antes e depois do rename,
+# nao por semelhanca de nome.
+CANAIS_FJ_POR_NUMERO = {
+    "5511926878173": "0c024044-c22d-4a00-9e52-6be67200c06a",  # LP Instagram + site
+    "5511926471049": "ba15da49-1416-48fd-9a64-20efee228bd6",  # LPs ML e Shopee
 }
 
 
@@ -182,21 +178,13 @@ def verificar_lp(nome_lp, url, conex, cache_fj):
                 cegos.append(n)
                 print(f"  {n}  ?? {FORA_DO_DIGISAC[n]} - NAO VERIFICADO: {erro}")
                 continue
-            sufixo = n[-4:]
-            alvo = [c for c in canais
-                    if c.get("display_name") in CANAIS_FJ_ACEITOS.get(n, [])
-                    or sufixo in re.sub(r"\D", "", c.get("display_name") or "")]
+            alvo_id = CANAIS_FJ_POR_NUMERO.get(n)
+            alvo = [c for c in canais if c.get("id") == alvo_id]
             if not alvo:
-                nomes = ", ".join(repr(c.get("display_name")) for c in canais)
+                nomes = ", ".join(f"{c.get('display_name')!r}({c.get('id')[:8]})" for c in canais)
                 cegos.append(n)
-                print(f"  {n}  ?? nenhum canal do FJ bate com este numero "
-                      f"- NAO VERIFICADO. Canais no workspace: {nomes}")
-                continue
-            if len(alvo) > 1:
-                nomes = ", ".join(repr(c.get("display_name")) for c in alvo)
-                cegos.append(n)
-                print(f"  {n}  ?? AMBIGUO: {len(alvo)} canais batem ({nomes}) "
-                      f"- NAO VERIFICADO, ajuste CANAIS_FJ_ACEITOS")
+                print(f"  {n}  ?? canal {alvo_id} nao existe mais no FJ - NAO VERIFICADO. "
+                      f"Canais no workspace: {nomes}")
                 continue
             c = alvo[0]
             if c.get("status") != "connected":
@@ -228,7 +216,15 @@ def main():
     problemas, cegos, total = [], [], 0
 
     for nome_lp, url in LPS:
-        p, c, t = verificar_lp(nome_lp, url, conex, cache_fj)
+        try:
+            p, c, t = verificar_lp(nome_lp, url, conex, cache_fj)
+        except Exception as e:
+            # Uma propriedade fora do ar nao pode impedir a checagem das outras,
+            # mas tambem nao pode passar batido.
+            print(f"\n### {nome_lp}  ({url})")
+            print(f"  ?? NAO VERIFICADA: {e}")
+            cegos.append(f"<lp-com-erro:{nome_lp}>")
+            continue
         problemas += p
         cegos += c
         total += t
