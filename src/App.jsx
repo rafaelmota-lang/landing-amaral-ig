@@ -9,6 +9,7 @@ import { WhyUs } from './components/WhyUs.jsx';
 import { Testimonials } from './components/Testimonials.jsx';
 import { FAQ } from './components/FAQ.jsx';
 import { Footer } from './components/Footer.jsx';
+import { BotaoWhatsApp } from './components/BotaoWhatsApp.jsx';
 
 const TWEAKS_ENABLED = typeof __TWEAKS__ !== 'undefined' && __TWEAKS__;
 
@@ -60,6 +61,7 @@ export function App() {
         <FAQ />
       </main>
       <Footer />
+      <BotaoWhatsApp />
 
       {TWEAKS_ENABLED && TweaksRuntime && (
         <Suspense fallback={null}>
