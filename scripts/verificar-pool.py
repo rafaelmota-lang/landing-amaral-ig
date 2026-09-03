@@ -108,7 +108,7 @@ def numeros_em_producao(LP):
     html = http(LP, "--compressed")
     m = re.search(r"/assets/index-[A-Za-z0-9_-]+\.js", html)
     if not m:
-        raise SystemExit("ERRO: nao achei o bundle na LP")
+        raise RuntimeError("nao achei o bundle no HTML da pagina")
     js = http(LP.rstrip("/") + m.group(0), "--compressed")
     return sorted(set(re.findall(r'numero:"(\d{12,13})"', js))), m.group(0)
 
@@ -117,7 +117,7 @@ def conexoes_digisac():
     base = env("DIGISAC_BASE", (ENV,)).rstrip("/")
     tok = env("DIGISAC_TOKEN", (ENV,))
     if not base or not tok:
-        raise SystemExit("ERRO: faltam DIGISAC_BASE/DIGISAC_TOKEN")
+        raise RuntimeError("faltam DIGISAC_BASE/DIGISAC_TOKEN")
     d = json.loads(http(base + "/services?perPage=200",
                         "-H", f"Authorization: Bearer {tok}"))
     fora = {}
