@@ -8,7 +8,7 @@
 export const ORIGENS = {
   google: { tag: '#Google', rotulo: 'Google Ads' },
   meta:   { tag: '#Meta',   rotulo: 'Meta Ads' },
-  site:   { tag: '#Meta',   rotulo: 'raiz (mantém #Meta para não quebrar campanha em curso)' },
+  site:   { tag: '#Site',   rotulo: 'raiz / orgânico' },
 };
 
 // Anexa um código curto do clique (gclid/fbclid) ao final da mensagem, dando
