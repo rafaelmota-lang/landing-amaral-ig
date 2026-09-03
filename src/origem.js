@@ -8,6 +8,7 @@
 export const ORIGENS = {
   google: { tag: '#Google', rotulo: 'Google Ads' },
   meta:   { tag: '#Meta',   rotulo: 'Meta Ads' },
+  youtube:{ tag: '#Youtube',rotulo: 'descrição dos vídeos do YouTube' },
   site:   { tag: '#Site',   rotulo: 'raiz / orgânico' },
 };
 
@@ -25,6 +26,7 @@ export function detectarOrigem() {
     const p = (location.pathname || '').toLowerCase();
     if (p.startsWith('/google')) return 'google';
     if (p.startsWith('/meta')) return 'meta';
+    if (p.startsWith('/youtube')) return 'youtube';
     const src = new URLSearchParams(location.search).get('src');
     if (src && ORIGENS[src.toLowerCase()]) return src.toLowerCase();
   } catch (e) {}

@@ -17,6 +17,7 @@ const VARIANTES = [
   { origem: 'site',   dir: '',       indexavel: true  },
   { origem: 'google', dir: 'google', indexavel: false },
   { origem: 'meta',   dir: 'meta',   indexavel: false },
+  { origem: 'youtube',dir: 'youtube',indexavel: false },
 ];
 
 const indexPath = 'dist/index.html';
