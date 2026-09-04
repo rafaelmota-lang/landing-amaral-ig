@@ -24,7 +24,8 @@ LPS = [
     ("Instagram",     "https://instagram.amaralebohrer.com.br/"),
     ("Mercado Livre", "https://ml.amaralebohrer.com.br/"),
     ("Shopee",        "https://shopee.amaralebohrer.com.br/"),
-    ("Site institucional", "https://amaralebohrer.com.br/"),
+    # O site institucional NAO entra aqui: por decisao do dono ele segue com o
+    # Leadster e sem pool de WhatsApp, entao nao ha numero para monitorar.
 ]
 ENV = os.path.expanduser("~/Sistemas/Projetos_Auxiliares/digisac-meta-capi/.env")
 # Segredos ficam FORA deste repositorio: ele e publico no GitHub.
