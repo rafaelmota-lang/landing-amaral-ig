@@ -11,40 +11,42 @@
 // por dois advogados diferentes).
 
 export const WHATSAPP_POOL = [
-  // Conferidos no Digisac em 2026-09-01: conectados e NAO arquivados.
-  { numero: '5511918271120', peso: 1 }, // API OFICIAL - 11 91827-1120  (Digisac, conectada)
-  { numero: '5511926878173', peso: 1 }, // Fluxo Juridico (fora do Digisac)
+  // Conferidos no Fluxo Juridico em 2026-09-03, ambos connected:
+  { numero: '5511926878630', peso: 1 }, // FJ "Canal Rede Social"      (coex)
+  { numero: '5511926878173', peso: 1 }, // FJ "Z-API - Redes Sociais"  (zapi)
 
   // ---------------------------------------------------------------------
-  // HISTORICO DO POOL — ler antes de acrescentar numero.
+  // HISTORICO DO POOL - ler antes de acrescentar numero.
   //
-  // 2026-09-01, decisao do dono: o pool passa a ter SO estes dois numeros.
-  // A distribuicao entre atendentes deixa de ser feita aqui e passa a ser
-  // feita DENTRO de cada plataforma (fila do Digisac / do Fluxo Juridico).
-  // A LP so escolhe a porta de entrada; quem distribui e o CRM.
-  // Saíram por essa decisao (estavam vivos, nao foi falha):
-  //   { numero: '5551999711399' },  // Disponivel - F - 1399
-  //   { numero: '5511911581515' },  // Disponivel - F - 1515
+  // 2026-09-03: o 5511918271120 (Digisac, "API OFICIAL - 11 91827-1120")
+  // sai por decisao do dono e entra o 5511926878630. Estava vivo, nao foi
+  // falha. ATENCAO: com essa troca a LP deixa de ter QUALQUER numero no
+  // Digisac; os dois destinos passam a viver no Fluxo Juridico.
   //
-  // 2026-08-31: ARQUIVADOS E DESCONECTADOS NO DIGISAC.
-  // Estavam "Disponivel / isConnected=true" quando o pool foi montado de
-  // manha; a noite apareceram arquivados. Enquanto estiveram no pool,
-  // ~50% dos leads pagos foram para WhatsApp morto.
-  //   { numero: '5511997571221' },  // Disponivel - F - 1221  ARQUIVADO
-  //   { numero: '5511972021019' },  // Disponivel - F - 1019  ARQUIVADO
-  //   { numero: '555180230806'  },  // Disponivel - F - 0806  ARQUIVADO
+  // 2026-09-01: saem 5551999711399 e 5511911581515 (vivos, decisao).
   //
-  // ANTES DE INCLUIR OU REATIVAR QUALQUER UM: conferir isConnected=true E
-  // archivedAt=null em GET /services do Digisac. Nao basta o numero existir.
-  // O scripts/verificar-pool.py faz essa conferencia e roda a cada 6h.
+  // 2026-08-31: ARQUIVADOS E DESCONECTADOS NO DIGISAC. Estavam conectados de
+  // manha; a noite apareceram arquivados, e enquanto isso ~50% dos leads
+  // pagos foram para WhatsApp morto.
+  //   { numero: '5511997571221' },  // 1221  ARQUIVADO
+  //   { numero: '5511972021019' },  // 1019  ARQUIVADO
+  //   { numero: '555180230806'  },  // 0806  ARQUIVADO
+  //
+  // ANTES DE INCLUIR OU REATIVAR QUALQUER UM: conferir que esta conectado e
+  // nao arquivado. O 8630 acima, por exemplo, esteve DISCONNECTED o dia
+  // inteiro de 02/09 e so foi reconectado antes de entrar aqui.
+  // O scripts/verificar-pool.py confere isso a cada 6h e alerta no Telegram.
   // ---------------------------------------------------------------------
 ];
 
 // ---------------------------------------------------------------------------
 // NOTA: esta LP roteia para DOIS CRMs de WhatsApp diferentes.
 //
-//   5511918271120 -> Digisac (tomazapp.digisac.app), conexao "API OFICIAL"
-//   5511926878173 -> Fluxo Juridico
+//   5511926878630 -> Fluxo Juridico, canal "Canal Rede Social"
+//   5511926878173 -> Fluxo Juridico, canal "Z-API - Redes Sociais"
+//
+// Desde 2026-09-03 os DOIS vivem no Fluxo Juridico: nao ha mais nada desta LP
+// no Digisac, entao o coletor digisac-meta-capi deixou de cobrir esta LP.
 //
 // O sorteio alterna entre os dois (peso 1 e 1, ~50/50). Dentro de cada um, a
 // distribuicao entre atendentes e responsabilidade da fila da propria
@@ -73,7 +75,9 @@ export const ASSUNTO = 'Quero recuperar minha conta do Instagram';
 // sorteio real montam a mensagem no cliente, via montarLink().
 export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
-const CHAVE_STICKY = 'ab_ig_wpp_v3';  // v3: pool trocado em 2026-09-01, reinicia o sorteio para os 2 numeros novos
+// v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
+// salvo ficaria preso a um numero fora do pool ate limpar o navegador.
+const CHAVE_STICKY = 'ab_ig_wpp_v4';
 
 export function escolherNumero() {
   try {
