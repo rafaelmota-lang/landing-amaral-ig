@@ -11,18 +11,21 @@
 // por dois advogados diferentes).
 
 export const WHATSAPP_POOL = [
-  // Conferidos no Fluxo Juridico em 2026-09-03, ambos connected:
-  { numero: '5511926878630', peso: 1 }, // FJ "Canal Rede Social"      (coex)
-  { numero: '5511926878173', peso: 1 }, // FJ "Z-API - Redes Sociais"  (zapi)
+  // Canal "Canal Rede Social" do Fluxo Juridico, modo COEXISTENCIA.
+  { numero: '5511926878630', peso: 1 },
 
   // ---------------------------------------------------------------------
   // HISTORICO DO POOL - ler antes de acrescentar numero.
   //
-  // 2026-09-03: o 5511918271120 (Digisac, "API OFICIAL - 11 91827-1120")
-  // sai por decisao do dono e entra o 5511926878630. Estava vivo, nao foi
-  // falha. ATENCAO: com essa troca a LP deixa de ter QUALQUER numero no
-  // Digisac; os dois destinos passam a viver no Fluxo Juridico.
+  // 2026-09-16: 5511926878173 REMOVIDO, o numero foi BANIDO pelo WhatsApp.
+  //   Era o canal "Z-API - Redes Sociais" (nao oficial). Por decisao do dono
+  //   a LP passa a usar SO o canal de coexistencia de redes sociais.
+  //   ATENCAO, ponto cego descoberto aqui: a API do Fluxo Juridico continuou
+  //   reportando esse canal como status="connected" mesmo com o numero
+  //   banido. O monitor de 6h deu "ok" para um numero morto. Conexao viva no
+  //   painel nao prova numero vivo no WhatsApp.
   //
+  // 2026-09-03: sai 5511918271120 (Digisac, vivo, decisao do dono).
   // 2026-09-01: saem 5551999711399 e 5511911581515 (vivos, decisao).
   //
   // 2026-08-31: ARQUIVADOS E DESCONECTADOS NO DIGISAC. Estavam conectados de
@@ -32,18 +35,19 @@ export const WHATSAPP_POOL = [
   //   { numero: '5511972021019' },  // 1019  ARQUIVADO
   //   { numero: '555180230806'  },  // 0806  ARQUIVADO
   //
-  // ANTES DE INCLUIR OU REATIVAR QUALQUER UM: conferir que esta conectado e
-  // nao arquivado. O 8630 acima, por exemplo, esteve DISCONNECTED o dia
-  // inteiro de 02/09 e so foi reconectado antes de entrar aqui.
-  // O scripts/verificar-pool.py confere isso a cada 6h e alerta no Telegram.
+  // ANTES DE INCLUIR OU REATIVAR QUALQUER UM: conferir que esta conectado,
+  // nao arquivado E nao banido. O painel nao mostra banimento; so mandando
+  // mensagem de teste para o numero da para ter certeza.
   // ---------------------------------------------------------------------
 ];
 
 // ---------------------------------------------------------------------------
 // NOTA: esta LP roteia para DOIS CRMs de WhatsApp diferentes.
 //
-//   5511926878630 -> Fluxo Juridico, canal "Canal Rede Social"
-//   5511926878173 -> Fluxo Juridico, canal "Z-API - Redes Sociais"
+//   5511926878630 -> Fluxo Juridico, canal "Canal Rede Social" (coexistencia)
+//
+// Destino unico desde 2026-09-16: nao ha rodizio nesta LP. A distribuicao
+// entre atendentes e responsabilidade da fila do proprio Fluxo Juridico.
 //
 // Desde 2026-09-03 os DOIS vivem no Fluxo Juridico: nao ha mais nada desta LP
 // no Digisac, entao o coletor digisac-meta-capi deixou de cobrir esta LP.
@@ -77,7 +81,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v4';
+const CHAVE_STICKY = 'ab_ig_wpp_v5';
 
 export function escolherNumero() {
   try {
