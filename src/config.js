@@ -11,33 +11,20 @@
 // por dois advogados diferentes).
 
 export const WHATSAPP_POOL = [
-  // Canal "Canal Rede Social" do Fluxo Juridico, modo COEXISTENCIA.
-  { numero: '5511926878630', peso: 1 },
+  // Fluxo Juridico, os dois canais de redes sociais.
+  { numero: '5511926878173', peso: 1 }, // "Z-API - Redes Sociais"
+  { numero: '5511926878630', peso: 1 }, // "Canal Rede Social" (coexistencia)
 
   // ---------------------------------------------------------------------
-  // HISTORICO DO POOL - ler antes de acrescentar numero.
+  // HISTORICO - ler antes de acrescentar numero.
   //
-  // 2026-09-16: 5511926878173 REMOVIDO, o numero foi BANIDO pelo WhatsApp.
-  //   Era o canal "Z-API - Redes Sociais" (nao oficial). Por decisao do dono
-  //   a LP passa a usar SO o canal de coexistencia de redes sociais.
-  //   ATENCAO, ponto cego descoberto aqui: a API do Fluxo Juridico continuou
-  //   reportando esse canal como status="connected" mesmo com o numero
-  //   banido. O monitor de 6h deu "ok" para um numero morto. Conexao viva no
-  //   painel nao prova numero vivo no WhatsApp.
-  //
-  // 2026-09-03: sai 5511918271120 (Digisac, vivo, decisao do dono).
-  // 2026-09-01: saem 5551999711399 e 5511911581515 (vivos, decisao).
-  //
-  // 2026-08-31: ARQUIVADOS E DESCONECTADOS NO DIGISAC. Estavam conectados de
-  // manha; a noite apareceram arquivados, e enquanto isso ~50% dos leads
-  // pagos foram para WhatsApp morto.
-  //   { numero: '5511997571221' },  // 1221  ARQUIVADO
-  //   { numero: '5511972021019' },  // 1019  ARQUIVADO
-  //   { numero: '555180230806'  },  // 0806  ARQUIVADO
+  // 2026-09-17: o 8173 VOLTOU do banimento e entra de novo no pool.
+  // 2026-09-16: 8173 removido, banido pelo WhatsApp. Naquele dia a API do FJ
+  //   seguiu reportando o canal como "connected" com o numero ja banido: o
+  //   painel nao denuncia banimento, e o monitor deu "ok" para numero morto.
   //
   // ANTES DE INCLUIR OU REATIVAR QUALQUER UM: conferir que esta conectado,
-  // nao arquivado E nao banido. O painel nao mostra banimento; so mandando
-  // mensagem de teste para o numero da para ter certeza.
+  // nao arquivado E nao banido. So mandando mensagem de teste da para saber.
   // ---------------------------------------------------------------------
 ];
 
@@ -81,7 +68,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v5';
+const CHAVE_STICKY = 'ab_ig_wpp_v6';
 
 export function escolherNumero() {
   try {
