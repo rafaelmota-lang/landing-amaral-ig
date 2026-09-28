@@ -11,14 +11,14 @@
 // por dois advogados diferentes).
 
 export const WHATSAPP_POOL = [
-  // Destino unico das campanhas de Instagram.
-  { numero: '5511926878173', peso: 1 }, // FJ "Z-API - Redes Sociais"
+  // Destino unico das campanhas de redes sociais.
+  { numero: '5511926878630', peso: 1 }, // FJ "Canal Rede Social" (coexistencia)
 
   // ---------------------------------------------------------------------
   // HISTORICO - ler antes de acrescentar numero.
   //
-  // 2026-09-22: sai o 5511926878630. Campanhas de Instagram passam a cair
-  //   so no 8173. Sem rodizio: quem distribui e a fila do Fluxo Juridico.
+  // 2026-09-28: sai o 5511926878173, entra o 8630. Destino unico.
+  // 2026-09-22: tinha ficado so no 8173.
   // 2026-09-17: o 8173 voltou do banimento e entrou junto com o 8630.
   // 2026-09-16: 8173 removido, banido pelo WhatsApp. Naquele dia a API do FJ
   //   seguiu reportando o canal como "connected" com o numero ja banido: o
@@ -69,7 +69,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v7';
+const CHAVE_STICKY = 'ab_ig_wpp_v8';
 
 export function escolherNumero() {
   try {

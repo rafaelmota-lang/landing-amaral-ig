@@ -64,10 +64,10 @@ WORKSPACE_FJ_ESPERADO = "Amaral e Bohrer Advogados"
 # Os IDs abaixo foram confirmados comparando a lista antes e depois do rename,
 # nao por semelhanca de nome.
 CANAIS_FJ_POR_NUMERO = {
-    "5511926878173": "0c024044-c22d-4a00-9e52-6be67200c06a",  # LP Instagram, "Z-API - Redes Sociais"
+    "5511926878630": "2dbbdf03-5e0c-4e8b-bbb6-7c5b11f41ec3",  # LP Instagram, "Canal Rede Social" (coex)
     "5511926471049": "ba15da49-1416-48fd-9a64-20efee228bd6",  # LPs ML e Shopee, "Canal Mercado Livre"
     # Fora de uso, mantido para reconhecer se voltar ao pool:
-    "5511926878630": "2dbbdf03-5e0c-4e8b-bbb6-7c5b11f41ec3",  # "Canal Rede Social" (coex)
+    "5511926878173": "0c024044-c22d-4a00-9e52-6be67200c06a",  # "Z-API - Redes Sociais"
 }
 
 
