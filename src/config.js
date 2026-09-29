@@ -12,20 +12,25 @@
 
 export const WHATSAPP_POOL = [
   // Destino unico das campanhas de redes sociais.
-  { numero: '5511926878630', peso: 1 }, // FJ "Canal Rede Social" (coexistencia)
+  { numero: '5511926878173', peso: 1 }, // FJ "Z-API - Redes Sociais"
 
   // ---------------------------------------------------------------------
   // HISTORICO - ler antes de acrescentar numero.
   //
-  // 2026-09-28: sai o 5511926878173, entra o 8630. Destino unico.
-  // 2026-09-22: tinha ficado so no 8173.
-  // 2026-09-17: o 8173 voltou do banimento e entrou junto com o 8630.
-  // 2026-09-16: 8173 removido, banido pelo WhatsApp. Naquele dia a API do FJ
-  //   seguiu reportando o canal como "connected" com o numero ja banido: o
-  //   painel nao denuncia banimento, e o monitor deu "ok" para numero morto.
+  // Os dois numeros de redes sociais se revezam conforme um e banido e o
+  // outro volta. Trocas ate agora:
+  //   2026-09-29: 8630 BANIDO, 8173 voltou -> so o 8173 (este).
+  //   2026-09-28: so o 8630.
+  //   2026-09-22: so o 8173.
+  //   2026-09-17: os dois juntos (8173 tinha voltado).
+  //   2026-09-16: 8173 BANIDO -> so o 8630.
+  //
+  // A API do Fluxo Juridico NAO denuncia banimento: em 16/09 ela reportou
+  // status="connected" para um numero ja banido, e o volume de mensagens
+  // tambem nao caiu. So teste de envio real prova que o numero esta vivo.
   //
   // ANTES DE INCLUIR OU REATIVAR QUALQUER UM: conferir que esta conectado,
-  // nao arquivado E nao banido. So mandando mensagem de teste da para saber.
+  // nao arquivado E nao banido.
   // ---------------------------------------------------------------------
 ];
 
@@ -69,7 +74,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v8';
+const CHAVE_STICKY = 'ab_ig_wpp_v9';
 
 export function escolherNumero() {
   try {
