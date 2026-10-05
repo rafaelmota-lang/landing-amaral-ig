@@ -12,25 +12,23 @@
 
 export const WHATSAPP_POOL = [
   // Destino unico das campanhas de redes sociais.
-  { numero: '5511926878173', peso: 1 }, // FJ "Z-API - Redes Sociais"
+  { numero: '5511926878630', peso: 1 }, // FJ "Canal Rede Social" (coexistencia)
 
   // ---------------------------------------------------------------------
   // HISTORICO - ler antes de acrescentar numero.
   //
   // Os dois numeros de redes sociais se revezam conforme um e banido e o
   // outro volta. Trocas ate agora:
-  //   2026-09-29: 8630 BANIDO, 8173 voltou -> so o 8173 (este).
+  //   2026-10-05: ativo e o 8630 (este).
+  //   2026-09-29: 8630 banido, 8173 voltou -> so o 8173.
   //   2026-09-28: so o 8630.
   //   2026-09-22: so o 8173.
   //   2026-09-17: os dois juntos (8173 tinha voltado).
-  //   2026-09-16: 8173 BANIDO -> so o 8630.
+  //   2026-09-16: 8173 banido -> so o 8630.
   //
   // A API do Fluxo Juridico NAO denuncia banimento: em 16/09 ela reportou
   // status="connected" para um numero ja banido, e o volume de mensagens
   // tambem nao caiu. So teste de envio real prova que o numero esta vivo.
-  //
-  // ANTES DE INCLUIR OU REATIVAR QUALQUER UM: conferir que esta conectado,
-  // nao arquivado E nao banido.
   // ---------------------------------------------------------------------
 ];
 
@@ -74,7 +72,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v9';
+const CHAVE_STICKY = 'ab_ig_wpp_v10';
 
 export function escolherNumero() {
   try {
