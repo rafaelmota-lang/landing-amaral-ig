@@ -36,6 +36,11 @@ BASE_FJ = "https://api.fluxojuridico.com.br/functions/v1/public-api"
 
 # Numeros que nao vivem no Digisac.
 FORA_DO_DIGISAC = {
+    "5511972021019": "Fluxo Juridico",
+    "5511995681013": "Fluxo Juridico",
+    "5511999351012": "Fluxo Juridico",
+    "5511926888022": "Fluxo Juridico",
+
     "5511926470895": "Fluxo Juridico",
     "5511926878173": "Fluxo Juridico",
     "5511926471049": "Fluxo Juridico",
@@ -67,6 +72,10 @@ WORKSPACE_FJ_ESPERADO = "Amaral e Bohrer Advogados"
 # Os IDs abaixo foram confirmados comparando a lista antes e depois do rename,
 # nao por semelhanca de nome.
 CANAIS_FJ_POR_NUMERO = {
+    "5511972021019": "a93893de-c650-4f1a-848b-b404fa07fe5b",  # Carla
+    "5511995681013": "98b8ebdb-02b6-4dee-8f20-20d93ff5035d",  # Ellen
+    "5511999351012": "c2517fc2-6a0d-460a-b2e6-0a1ebc78c986",  # Vitoria
+    "5511926888022": "f9927b4e-aada-4a01-ab9a-a485dc226fc8",  # Gabriela
     "5511926878173": "0c024044-c22d-4a00-9e52-6be67200c06a",  # LPs redes sociais, "Z-API - Redes Sociais"
     "5511926470895": "ba2257e0-1ed3-4511-9bef-f95825ec7364",  # LPs redes sociais, "Canal Rede Social" (coex novo)
     "5511926471049": "ba15da49-1416-48fd-9a64-20efee228bd6",  # LPs ML e Shopee, "Canal Mercado Livre"
