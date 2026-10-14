@@ -24,6 +24,8 @@ LPS = [
     ("Instagram",     "https://instagram.amaralebohrer.com.br/"),
     ("Mercado Livre", "https://ml.amaralebohrer.com.br/"),
     ("Shopee",        "https://shopee.amaralebohrer.com.br/"),
+    ("Facebook",      "https://facebook.amaralebohrer.com.br/"),
+    ("WhatsApp",      "https://whatsapp.amaralebohrer.com.br/"),
     # O site institucional NAO entra aqui: por decisao do dono ele segue com o
     # Leadster e sem pool de WhatsApp, entao nao ha numero para monitorar.
 ]
