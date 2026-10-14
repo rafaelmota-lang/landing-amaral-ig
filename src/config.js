@@ -11,9 +11,11 @@
 // por dois advogados diferentes).
 
 export const WHATSAPP_POOL = [
-  // 2026-10-13: os dois numeros de redes sociais (8173 zapi e 0895 coex)
-  // foram BLOQUEADOS. Provisoriamente tudo vai para o canal do Mercado Livre.
-  { numero: '5511926471049', peso: 1 }, // FJ "Canal Mercado Livre"
+  // 2026-10-14: 1049 (Canal Mercado Livre) BANIDO. Divisao do dono:
+  // redes sociais = Carla, Ellen, Vitoria; marketplace = Gabriela.
+  { numero: '5511972021019', peso: 1 }, // FJ "Carla"
+  { numero: '5511995681013', peso: 1 }, // FJ "Ellen"
+  { numero: '5511999351012', peso: 1 }, // FJ "Vitoria"
   // A API do FJ nao denuncia banimento: so teste de envio real prova que o
   // numero esta vivo. Historico completo de trocas no repo landing-amaral-ig.
 ];
@@ -58,7 +60,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v12';
+const CHAVE_STICKY = 'ab_ig_wpp_v13';
 
 export function escolherNumero() {
   try {
