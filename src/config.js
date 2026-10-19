@@ -13,7 +13,7 @@
 export const WHATSAPP_POOL = [
   // Redes sociais, rodizio de 4 (decisao da reuniao com o Callegari, 14/10).
   { numero: '5511972081104', peso: 1 }, // pedido do Callegari 15/10, no lugar do 1515 (Jessica)
-  { numero: '5511972021019', peso: 1 }, // FJ "Carla"
+  { numero: '5511997571221', peso: 1 }, // FJ "Carla" (canal novo, ex Disponivel 1; 1019 banido em 19/10)
   { numero: '5511995681013', peso: 1 }, // FJ "Ellen"
   { numero: '5511999351012', peso: 1 }, // FJ "Vitoria"
   // Fora da campanha: 0895 ("Canal Rede Social", so organico) e qualquer Z-API.
@@ -61,7 +61,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v15';
+const CHAVE_STICKY = 'ab_ig_wpp_v16';
 
 export function escolherNumero() {
   try {
