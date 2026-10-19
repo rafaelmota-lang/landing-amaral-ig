@@ -50,7 +50,15 @@ $AGORA" ;;
 Pode estar tudo bem ou nao: o monitor nao conseguiu saber. Token expirado ou rede.
 
 $SAIDA" ;;
-  0) # heartbeat: so no run do meio-dia, para provar que o monitor esta vivo
+  0) # reserva comprometida ou entrega limitada pela Meta: avisa em toda rodada
+     if echo "$SAIDA" | grep -qE "CONTINGENCIA (BLOQUEADA|DESCONECTADA|SUMIU)|AVISO META"; then
+       avisar "⚠️ Atencao nos numeros de WhatsApp (LPs) ($AGORA)
+
+$(echo "$SAIDA" | grep -E "CONTINGENCIA|AVISO META" | head -8)
+
+Ninguem esta perdendo lead agora, mas a reserva ou um numero ativo esta em risco."
+     fi
+     # heartbeat: so no run do meio-dia, para provar que o monitor esta vivo
      [ "$(date +%H)" = "12" ] && avisar "✅ Pool da LP do Instagram OK ($AGORA)
 
 $SAIDA" ;;

@@ -18,7 +18,7 @@ tempo indeterminado, justamente por estar fora do monitor.
 Uso:  python3 verificar-pool.py
 Saida: 0 = tudo ok | 1 = PROBLEMA (algum numero morto) | 2 = nao conclusivo
 """
-import json, os, re, subprocess, sys, urllib.parse
+import json, os, re, subprocess, sys, time, datetime, urllib.parse
 
 LPS = [
     ("Instagram",     "https://instagram.amaralebohrer.com.br/"),
@@ -174,6 +174,124 @@ def canais_fj():
         return [], f"erro ao consultar o FJ: {e}"
 
 
+# ---------------------------------------------------------------------------
+# DETECTOR DE BLOQUEIO PELA META (descoberto em 2026-10-19).
+#
+# A API do FJ diz "connected" mesmo com o numero bloqueado. Mas as mensagens
+# ENVIADAS por um numero bloqueado voltam com status "failed" e o erro 131031
+# "Business Account locked". A Carla 1019 apareceu assim em 16/10 13h46; o
+# banimento so foi percebido em 19/10, 3 dias recebendo lead pago ja bloqueado.
+#
+# Como funciona: pega as conversas com atividade mais recente (3 paginas), e
+# para cada canal olha as mensagens das ultimas conversas e procura envio
+# "failed" com codigo de bloqueio dentro da janela. Custa ~45 chamadas ao FJ
+# (limite 30/min), por isso o sleep entre elas.
+# LIMITE: so enxerga numero que teve conversa recente com resposta enviada. Numero
+# parado, sem trafego, nao tem como acusar bloqueio.
+CODIGOS_BLOQUEIO = {131031}          # Business Account locked
+JANELA_HORAS = 96
+CONVS_POR_CANAL = 6
+
+
+def _codigos(m):
+    ed = m.get("error_detail")
+    texto = json.dumps(ed) if not isinstance(ed, str) else ed
+    return {int(x) for x in re.findall(r"code\"?'?:\s*(\d+)", texto or "")}
+
+
+def falhas_por_canal(tok, canal_ids):
+    """{canal_id: [(quando_iso, codigo)]} com falhas de envio na janela."""
+    hdr = ("-H", f"Authorization: Bearer {tok}")
+    convs = []
+    for off in (0, 100, 200):
+        d = json.loads(http(f"{BASE_FJ}/conversations?limit=100&offset={off}", *hdr))
+        convs += d.get("data") or []
+        time.sleep(2.2)
+    corte = (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(hours=JANELA_HORAS)).isoformat()
+    out = {}
+    for cid in canal_ids:
+        mine = sorted([c for c in convs if c.get("channel_id") == cid],
+                      key=lambda c: c.get("last_message_at") or "", reverse=True)[:CONVS_POR_CANAL]
+        achados = []
+        for c in mine:
+            d = json.loads(http(f"{BASE_FJ}/conversations/{c['id']}/messages?limit=40", *hdr))
+            time.sleep(2.2)
+            for m in d.get("data") or []:
+                if m.get("direction") == "outbound" and m.get("status") == "failed" \
+                        and (m.get("created_at") or "") >= corte:
+                    achados.append((m.get("created_at"), sorted(_codigos(m))))
+        out[cid] = achados
+    return out
+
+
+CODIGOS_AVISO = {131049}   # "mensagem nao entregue para manter o ecossistema saudavel"
+
+# Numeros de reserva (nao recebem lead). Se a reserva tambem cair, o dono precisa
+# saber ANTES de precisar dela. Chave = numero, valor = ID do canal no FJ.
+CONTINGENCIA = {
+    "5511926470895": "ba2257e0-1ed3-4511-9bef-f95825ec7364",  # "Canal Rede Social" coex
+    "5511926878173": "0c024044-c22d-4a00-9e52-6be67200c06a",  # "Z-API - Redes Sociais"
+}
+
+
+def marcado_banido(canal):
+    """A equipe renomeia o canal para 'Banido ...' no FJ quando o numero cai
+    (visto em 19/10 com Ellen e Vitoria). A API segue 'connected', entao o NOME
+    e o unico sinal humano. Vale como alarme."""
+    return "banid" in (canal.get("display_name") or "").lower()
+
+
+def canal_aviso_qualidade(cache_fj, canal_id):
+    try:
+        ach = [q for q, cods in (cache_fj.get("falhas") or {}).get(canal_id, []) if set(cods) & CODIGOS_AVISO]
+        return sorted(ach)[-1] if ach else None
+    except Exception:
+        return None
+
+
+def verificar_contingencia(cache_fj):
+    """Confere a reserva. Devolve a lista de avisos (texto)."""
+    avisos = []
+    try:
+        if cache_fj.get("dados") is None:
+            cache_fj["dados"] = canais_fj()
+        canais, erro = cache_fj["dados"]
+        if erro:
+            return [f"contingencia nao verificada: {erro}"]
+        print("\n### Contingencia (nao recebe lead)")
+        for n, cid in CONTINGENCIA.items():
+            c = next((x for x in canais if x.get("id") == cid), None)
+            if not c:
+                msg = f"CONTINGENCIA SUMIU do FJ: {n}"
+            elif c.get("status") != "connected":
+                msg = f"CONTINGENCIA DESCONECTADA: {n} '{c['display_name']}' status={c.get('status')}"
+            else:
+                b = canal_bloqueado(cache_fj, cid)
+                msg = (f"CONTINGENCIA BLOQUEADA PELA META: {n} '{c['display_name']}' erro 131031 desde {b[0][:16]}"
+                       if b else None)
+            if msg:
+                avisos.append(msg); print(f"  !! {msg}")
+            else:
+                print(f"  ok {n} '{c['display_name']}' connected, sem falha de envio")
+    except Exception as e:
+        avisos.append(f"contingencia nao verificada: {e}")
+    return avisos
+
+
+def canal_bloqueado(cache_fj, canal_id):
+    """Primeira data de falha 131031 do canal na janela, ou None. Tolerante a erro."""
+    try:
+        if "falhas" not in cache_fj:
+            tok = env("FJ_TOKEN_AMARAL", (ENV_FJ,))
+            ids = set(CANAIS_FJ_POR_NUMERO.values()) | set(CONTINGENCIA.values())
+            cache_fj["falhas"] = falhas_por_canal(tok, ids)
+        ach = [q for q, cods in cache_fj["falhas"].get(canal_id, []) if set(cods) & CODIGOS_BLOQUEIO]
+        return sorted(ach) if ach else None
+    except Exception as e:
+        print(f"      (detector de bloqueio indisponivel: {e})")
+        return None
+
+
 def verificar_lp(nome_lp, url, conex, cache_fj):
     """Checa uma LP. Devolve (problemas, cegos, total_de_numeros)."""
     nums, bundle = numeros_em_producao(url)
@@ -207,11 +325,22 @@ def verificar_lp(nome_lp, url, conex, cache_fj):
                       f"Canais no workspace: {nomes}")
                 continue
             c = alvo[0]
-            if c.get("status") != "connected":
+            if marcado_banido(c):
+                problemas.append((nome_lp, n, f"canal FJ marcado como BANIDO pela equipe: '{c['display_name']}'"))
+                print(f"  {n}  !! BANIDO (equipe renomeou o canal) -> FJ '{c['display_name']}'")
+            elif c.get("status") != "connected":
                 problemas.append((nome_lp, n, f"canal FJ '{c['display_name']}' status={c.get('status')}"))
                 print(f"  {n}  !! MORTO -> FJ '{c['display_name']}' status={c.get('status')}")
             else:
-                print(f"  {n}  ok -> FJ '{c['display_name']}' connected")
+                bloq = canal_bloqueado(cache_fj, c["id"])
+                if bloq:
+                    problemas.append((nome_lp, n, f"BLOQUEADO PELA META (erro 131031) desde {bloq[0][:16]}, FJ ainda diz connected"))
+                    print(f"  {n}  !! BLOQUEADO PELA META -> FJ '{c['display_name']}' diz connected mas envio falha com 131031 desde {bloq[0][:16]}")
+                else:
+                    print(f"  {n}  ok -> FJ '{c['display_name']}' connected")
+                    q = canal_aviso_qualidade(cache_fj, c["id"])
+                    if q:
+                        print(f"      AVISO META: '{c['display_name']}' teve entrega limitada pela Meta (131049) em {q[:16]}; costuma vir antes de restricao")
             continue
 
         c = conex.get(n[-4:])
@@ -249,10 +378,17 @@ def main():
         cegos += c
         total += t
 
+    avisos_cont = verificar_contingencia(cache_fj)
+
     checaveis = total - len(cegos)
     vivos = checaveis - len(problemas)
     print(f"\n{'='*58}")
     print(f"{len(LPS)} LPs | verificados vivos: {vivos}/{checaveis} | nao verificaveis: {len(cegos)}/{total}")
+
+    if avisos_cont:
+        print("\nAVISO: reserva comprometida, sem numero de backup confiavel:")
+        for a in avisos_cont:
+            print(f"    {a}")
 
     if cegos:
         # Cobertura parcial nao pode ser reportada como "tudo certo".
