@@ -36,6 +36,7 @@ BASE_FJ = "https://api.fluxojuridico.com.br/functions/v1/public-api"
 
 # Numeros que nao vivem no Digisac.
 FORA_DO_DIGISAC = {
+    "555180230806": "Fluxo Juridico",
     "5511997571221": "Fluxo Juridico",
     "5511972081104": "Fluxo Juridico",
     "5511911581515": "Fluxo Juridico",
@@ -75,6 +76,8 @@ WORKSPACE_FJ_ESPERADO = "Amaral e Bohrer Advogados"
 # Os IDs abaixo foram confirmados comparando a lista antes e depois do rename,
 # nao por semelhanca de nome.
 CANAIS_FJ_POR_NUMERO = {
+    "5511972021019": "a93893de-c650-4f1a-848b-b404fa07fe5b",  # Vitoria (canal novo 19/10, numero 1019)
+    "555180230806": "463c19ba-94d9-4ae3-ab26-f499ae66d755",  # Ellen (canal novo 19/10, 51 8023-0806)
     "5511972081104": "f2a5738a-5f9c-4ece-a988-3b8afd7bcbd7",  # Jessica (numero novo 15/10)
     "5511997571221": "50f5ae95-969f-4cce-8b75-8eb588a21384",  # Carla (canal novo 19/10)
     "5511995681013": "98b8ebdb-02b6-4dee-8f20-20d93ff5035d",  # Ellen
