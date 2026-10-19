@@ -51,7 +51,7 @@ Pode estar tudo bem ou nao: o monitor nao conseguiu saber. Token expirado ou red
 
 $SAIDA" ;;
   0) # reserva comprometida ou entrega limitada pela Meta: avisa em toda rodada
-     if echo "$SAIDA" | grep -qE "CONTINGENCIA (BLOQUEADA|DESCONECTADA|SUMIU)|AVISO META"; then
+     if echo "$SAIDA" | grep -qE "CONTINGENCIA (BLOQUEADA|EM RISCO|DESCONECTADA|SUMIU)|AVISO META"; then
        avisar "⚠️ Atencao nos numeros de WhatsApp (LPs) ($AGORA)
 
 $(echo "$SAIDA" | grep -E "CONTINGENCIA|AVISO META" | head -8)

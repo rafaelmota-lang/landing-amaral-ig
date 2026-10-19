@@ -200,7 +200,7 @@ def _codigos(m):
 
 
 def falhas_por_canal(tok, canal_ids):
-    """{canal_id: [(quando_iso, codigo)]} com falhas de envio na janela."""
+    """{canal_id: {"falhas": [(quando_iso, codigos)], "ultimo_ok": iso}} na janela."""
     hdr = ("-H", f"Authorization: Bearer {tok}")
     convs = []
     for off in (0, 100, 200):
@@ -213,14 +213,18 @@ def falhas_por_canal(tok, canal_ids):
         mine = sorted([c for c in convs if c.get("channel_id") == cid],
                       key=lambda c: c.get("last_message_at") or "", reverse=True)[:CONVS_POR_CANAL]
         achados = []
+        ultimo_ok = ""
         for c in mine:
             d = json.loads(http(f"{BASE_FJ}/conversations/{c['id']}/messages?limit=40", *hdr))
             time.sleep(2.2)
             for m in d.get("data") or []:
-                if m.get("direction") == "outbound" and m.get("status") == "failed" \
-                        and (m.get("created_at") or "") >= corte:
+                if m.get("direction") != "outbound" or (m.get("created_at") or "") < corte:
+                    continue
+                if m.get("status") == "failed":
                     achados.append((m.get("created_at"), sorted(_codigos(m))))
-        out[cid] = achados
+                elif m.get("status") in ("sent", "delivered", "read"):
+                    ultimo_ok = max(ultimo_ok, m.get("created_at") or "")
+        out[cid] = {"falhas": achados, "ultimo_ok": ultimo_ok}
     return out
 
 
@@ -243,7 +247,7 @@ def marcado_banido(canal):
 
 def canal_aviso_qualidade(cache_fj, canal_id):
     try:
-        ach = [q for q, cods in (cache_fj.get("falhas") or {}).get(canal_id, []) if set(cods) & CODIGOS_AVISO]
+        ach = [q for q, cods in ((cache_fj.get("falhas") or {}).get(canal_id) or {}).get("falhas", []) if set(cods) & CODIGOS_AVISO]
         return sorted(ach)[-1] if ach else None
     except Exception:
         return None
@@ -266,9 +270,11 @@ def verificar_contingencia(cache_fj):
             elif c.get("status") != "connected":
                 msg = f"CONTINGENCIA DESCONECTADA: {n} '{c['display_name']}' status={c.get('status')}"
             else:
-                b = canal_bloqueado(cache_fj, cid)
-                msg = (f"CONTINGENCIA BLOQUEADA PELA META: {n} '{c['display_name']}' erro 131031 desde {b[0][:16]}"
-                       if b else None)
+                est, quando = canal_bloqueado(cache_fj, cid)
+                msg = (f"CONTINGENCIA BLOQUEADA PELA META: {n} '{c['display_name']}' ultimo envio falhou com 131031 ({_brt(quando)})"
+                       if est == "vigente" else
+                       f"CONTINGENCIA EM RISCO: {n} '{c['display_name']}' teve bloqueio 131031 em {_brt(quando)} e voltou a enviar"
+                       if est == "precursor" else None)
             if msg:
                 avisos.append(msg); print(f"  !! {msg}")
             else:
@@ -278,18 +284,32 @@ def verificar_contingencia(cache_fj):
     return avisos
 
 
+def _brt(iso):
+    """ISO em UTC do FJ para 'dd/mm hh:mm' de Brasilia."""
+    try:
+        d = datetime.datetime.fromisoformat((iso or "")[:19]) - datetime.timedelta(hours=3)
+        return d.strftime("%d/%m %H:%M")
+    except Exception:
+        return (iso or "?")[:16]
+
+
 def canal_bloqueado(cache_fj, canal_id):
-    """Primeira data de falha 131031 do canal na janela, ou None. Tolerante a erro."""
+    """(estado, quando_iso). estado: 'vigente' (ultimo envio falhou com 131031, sem envio
+    OK depois), 'precursor' (falhou mas voltou a enviar; a Carla 1019 teve isso em
+    16/10 e caiu 3 dias depois) ou None. Tolerante a erro."""
     try:
         if "falhas" not in cache_fj:
             tok = env("FJ_TOKEN_AMARAL", (ENV_FJ,))
             ids = set(CANAIS_FJ_POR_NUMERO.values()) | set(CONTINGENCIA.values())
             cache_fj["falhas"] = falhas_por_canal(tok, ids)
-        ach = [q for q, cods in cache_fj["falhas"].get(canal_id, []) if set(cods) & CODIGOS_BLOQUEIO]
-        return sorted(ach) if ach else None
+        d = cache_fj["falhas"].get(canal_id) or {"falhas": [], "ultimo_ok": ""}
+        ach = sorted(q for q, cods in d["falhas"] if set(cods) & CODIGOS_BLOQUEIO)
+        if not ach:
+            return None, None
+        return ("vigente" if d["ultimo_ok"] <= ach[-1] else "precursor"), ach[-1]
     except Exception as e:
         print(f"      (detector de bloqueio indisponivel: {e})")
-        return None
+        return None, None
 
 
 def verificar_lp(nome_lp, url, conex, cache_fj):
@@ -332,15 +352,17 @@ def verificar_lp(nome_lp, url, conex, cache_fj):
                 problemas.append((nome_lp, n, f"canal FJ '{c['display_name']}' status={c.get('status')}"))
                 print(f"  {n}  !! MORTO -> FJ '{c['display_name']}' status={c.get('status')}")
             else:
-                bloq = canal_bloqueado(cache_fj, c["id"])
-                if bloq:
-                    problemas.append((nome_lp, n, f"BLOQUEADO PELA META (erro 131031) desde {bloq[0][:16]}, FJ ainda diz connected"))
-                    print(f"  {n}  !! BLOQUEADO PELA META -> FJ '{c['display_name']}' diz connected mas envio falha com 131031 desde {bloq[0][:16]}")
+                est, quando = canal_bloqueado(cache_fj, c["id"])
+                if est == "vigente":
+                    problemas.append((nome_lp, n, f"BLOQUEADO PELA META agora (erro 131031 em {_brt(quando)}, sem envio OK depois), FJ diz connected"))
+                    print(f"  {n}  !! BLOQUEADO PELA META -> FJ '{c['display_name']}' diz connected, ultimo envio falhou com 131031 ({_brt(quando)})")
                 else:
                     print(f"  {n}  ok -> FJ '{c['display_name']}' connected")
+                    if est == "precursor":
+                        print(f"      AVISO META: '{c['display_name']}' teve bloqueio 131031 em {_brt(quando)} e voltou a enviar; a Carla 1019 teve o mesmo 3 dias antes de cair")
                     q = canal_aviso_qualidade(cache_fj, c["id"])
                     if q:
-                        print(f"      AVISO META: '{c['display_name']}' teve entrega limitada pela Meta (131049) em {q[:16]}; costuma vir antes de restricao")
+                        print(f"      AVISO META: '{c['display_name']}' teve entrega limitada pela Meta (131049) em {_brt(q)}; costuma vir antes de restricao")
             continue
 
         c = conex.get(n[-4:])

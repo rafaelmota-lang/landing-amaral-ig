@@ -12,10 +12,12 @@
 
 export const WHATSAPP_POOL = [
   // 2026-10-19: Ellen (1013) e Vitoria (1012) BANIDAS (canais renomeados 'Banido' no FJ).
-  // Pool provisorio de 2 ate entrarem os numeros novos de Ellen e Vitoria.
+  // Callegari (grupo Comercial Tomaz, 19/10 10h59): Vitoria sai 1012 e entra 1019; Ellen sai 1013 e entra 51 8023-0806.
   // Redes sociais, rodizio de 4 (decisao da reuniao com o Callegari, 14/10).
   { numero: '5511972081104', peso: 1 }, // pedido do Callegari 15/10, no lugar do 1515 (Jessica)
   { numero: '5511997571221', peso: 1 }, // FJ "Carla" (canal novo, ex Disponivel 1; 1019 banido em 19/10)
+  { numero: '5511972021019', peso: 1 }, // FJ \"Vitoria\" (canal novo, 1019)
+  { numero: '555180230806', peso: 1 },  // FJ \"Ellen\" (canal novo, 51 8023-0806)
   // Fora da campanha: 0895 ("Canal Rede Social", so organico) e qualquer Z-API.
   // A API do FJ nao denuncia banimento: so teste de envio real prova que o
   // numero esta vivo. Historico completo de trocas no repo landing-amaral-ig.
@@ -61,7 +63,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v17';
+const CHAVE_STICKY = 'ab_ig_wpp_v18';
 
 export function escolherNumero() {
   try {
