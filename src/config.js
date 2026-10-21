@@ -17,7 +17,7 @@ export const WHATSAPP_POOL = [
   { numero: '5511972081104', peso: 1 }, // pedido do Callegari 15/10, no lugar do 1515 (Jessica)
   { numero: '5511997571221', peso: 1 }, // FJ "Carla" (canal novo, ex Disponivel 1; 1019 banido em 19/10)
   { numero: '5511972021019', peso: 1 }, // FJ \"Vitoria\" (canal novo, 1019)
-  { numero: '555180230806', peso: 1 },  // FJ \"Ellen\" (canal novo, 51 8023-0806)
+  { numero: '5511995681013', peso: 1 }, // pedido 21/10: entra 11 99568-1013 no lugar do 51 8023-0806 (Ellen)
   // Fora da campanha: 0895 ("Canal Rede Social", so organico) e qualquer Z-API.
   // A API do FJ nao denuncia banimento: so teste de envio real prova que o
   // numero esta vivo. Historico completo de trocas no repo landing-amaral-ig.
@@ -63,7 +63,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v18';
+const CHAVE_STICKY = 'ab_ig_wpp_v19';
 
 export function escolherNumero() {
   try {
