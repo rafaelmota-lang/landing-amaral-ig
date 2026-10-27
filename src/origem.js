@@ -15,7 +15,10 @@ export const ORIGENS = {
 // Anexa um código curto do clique (gclid/fbclid) ao final da mensagem, dando
 // granularidade de CAMPANHA e não só de plataforma. Desligado por padrão porque
 // altera o texto que o cliente vê. Ligue quando quiser rastrear anúncio a anúncio.
-export const INCLUIR_CODIGO_DO_CLIQUE = false;
+// Ligado em 27/10/2026 (Rafael) para importar os contratos fechados no Google Ads:
+// o final do gclid casa com o click_view da API do Google no dia do lead, que
+// devolve o gclid inteiro. 8 caracteres: com 6 houve 3 repetidos em 755 cliques/dia.
+export const INCLUIR_CODIGO_DO_CLIQUE = true;
 
 export function detectarOrigem() {
   // No prerender não existe location: a origem vem do build (prerender.mjs).
@@ -38,9 +41,9 @@ export function codigoDoClique() {
   try {
     const q = new URLSearchParams(location.search);
     const g = q.get('gclid') || q.get('gbraid') || q.get('wbraid');
-    if (g) return ` [g:${g.slice(-6)}]`;
+    if (g) return ` [g:${g.slice(-8)}]`;
     const f = q.get('fbclid');
-    if (f) return ` [f:${f.slice(-6)}]`;
+    if (f) return ` [f:${f.slice(-8)}]`;
   } catch (e) {}
   return '';
 }
