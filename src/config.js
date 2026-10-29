@@ -81,20 +81,23 @@ export function escolherNumero() {
   return escolhido;
 }
 
-export function montarMensagem() {
+export function montarMensagem(comCodigo = true) {
   const origem = detectarOrigem();
   const tag = (ORIGENS[origem] || ORIGENS.site).tag;
-  return `${tag} - ${ASSUNTO}${codigoDoClique()}`;
+  return `${tag} - ${ASSUNTO}${comCodigo ? codigoDoClique() : ''}`;
 }
 
-export function montarLink(numero) {
-  return `https://wa.me/${numero}?text=${encodeURIComponent(montarMensagem())}`;
+export function montarLink(numero, comCodigo = true) {
+  return `https://wa.me/${numero}?text=${encodeURIComponent(montarMensagem(comCodigo))}`;
 }
 
 // Link padrão do HTML pré-renderizado (o prerender roda sem localStorage).
 // É FUNÇÃO, não const: a mensagem depende da origem, e a origem só é conhecida
 // na hora do render — no build por variante, no cliente pelo pathname. Como
 // const, seria congelada no import e as três páginas sairiam com a mesma tag.
+// Sem o código do clique, igual ao HTML pré-renderizado. Corrigido em 29/10/2026: com o código, o
+// estado inicial do cliente já saía igual ao link final quando o sorteio caía no primeiro número
+// do pool; o useEffect não mudava nada, a hidratação não corrige atributo e o link ficava sem código.
 export function linkPadrao() {
-  return montarLink(WHATSAPP_POOL[0].numero);
+  return montarLink(WHATSAPP_POOL[0].numero, false);
 }
