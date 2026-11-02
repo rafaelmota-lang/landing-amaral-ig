@@ -15,7 +15,7 @@ export const WHATSAPP_POOL = [
   // Callegari (grupo Comercial Tomaz, 19/10 10h59): Vitoria sai 1012 e entra 1019; Ellen sai 1013 e entra 51 8023-0806.
   // Redes sociais, rodizio de 4 (decisao da reuniao com o Callegari, 14/10).
   { numero: '5511972081104', peso: 1 }, // pedido do Callegari 15/10, no lugar do 1515 (Jessica)
-  { numero: '5511997571221', peso: 1 }, // FJ "Carla" (canal novo, ex Disponivel 1; 1019 banido em 19/10)
+  // 02/11: saiu 11 99757-1221 (pedido Callegari)
   // 31/10: saiu 11 97202-1019 (pedido Callegari)
   // 21/10 ~20h: 11 99568-1013 (Ellen) BANIDO de novo (Meta BANNED, FJ 'Banido Ellen 2'); saiu da roleta ate vir numero novo.
   { numero: '5511915933507', peso: 1 }, // pedido 22/10: entra 11 91593-3507 no lugar do 11 99568-1013 (banido)
@@ -23,6 +23,7 @@ export const WHATSAPP_POOL = [
   // A API do FJ nao denuncia banimento: so teste de envio real prova que o
   // numero esta vivo. Historico completo de trocas no repo landing-amaral-ig.
   { numero: '5511926470895', peso: 1 }, // 31/10: entrou 11 92647-0895 no lugar do 11 97202-1019 (pedido Callegari)
+  { numero: '5511995681013', peso: 1 }, // 02/11: entrou 11 99568-1013 no lugar do 11 99757-1221 (pedido Callegari)
 ];
 
 // ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v22';
+const CHAVE_STICKY = 'ab_ig_wpp_v23';
 
 export function escolherNumero() {
   try {
