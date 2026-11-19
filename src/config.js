@@ -14,7 +14,7 @@ export const WHATSAPP_POOL = [
   // 2026-10-19: Ellen (1013) e Vitoria (1012) BANIDAS (canais renomeados 'Banido' no FJ).
   // Callegari (grupo Comercial Tomaz, 19/10 10h59): Vitoria sai 1012 e entra 1019; Ellen sai 1013 e entra 51 8023-0806.
   // Redes sociais, rodizio de 4 (decisao da reuniao com o Callegari, 14/10).
-  { numero: '5511972081104', peso: 1 }, // pedido do Callegari 15/10, no lugar do 1515 (Jessica)
+  // 18/11: saiu 11 97208-1104 (pedido automático, número banido)
   // 02/11: saiu 11 99757-1221 (pedido Callegari)
   // 31/10: saiu 11 97202-1019 (pedido Callegari)
   // 21/10 ~20h: 11 99568-1013 (Ellen) BANIDO de novo (Meta BANNED, FJ 'Banido Ellen 2'); saiu da roleta ate vir numero novo.
@@ -67,7 +67,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v24';
+const CHAVE_STICKY = 'ab_ig_wpp_v25';
 
 export function escolherNumero() {
   try {
