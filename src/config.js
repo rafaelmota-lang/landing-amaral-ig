@@ -28,6 +28,7 @@ export const WHATSAPP_POOL = [
   // 22/11: saiu 11 99935-1012 (pedido automático, número banido)
   { numero: '5511930653905', peso: 1 }, // 22/11: entrou 11 93065-3905 (acrescentado) (pedido Callegari)
   { numero: '5511912611616', peso: 1 }, // 22/11: entrou 11 91261-1616 (acrescentado) (pedido Callegari)
+  { numero: '5511926470895', peso: 1 }, // 23/11: entrou 11 92647-0895 (acrescentado) (pedido Callegari)
 ];
 
 // ---------------------------------------------------------------------------
@@ -70,7 +71,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v31';
+const CHAVE_STICKY = 'ab_ig_wpp_v32';
 
 export function escolherNumero() {
   try {
