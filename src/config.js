@@ -22,7 +22,7 @@ export const WHATSAPP_POOL = [
   // Fora da campanha: 0895 ("Canal Rede Social", so organico) e qualquer Z-API.
   // A API do FJ nao denuncia banimento: so teste de envio real prova que o
   // numero esta vivo. Historico completo de trocas no repo landing-amaral-ig.
-  { numero: '5511926470895', peso: 1 }, // 31/10: entrou 11 92647-0895 no lugar do 11 97202-1019 (pedido Callegari)
+  // 23/11: saiu 11 92647-0895 (pedido automático, número banido)
   // 22/11: saiu 11 99568-1013 (pedido automático, número banido)
   { numero: '5511997571221', peso: 1 }, // 03/11: entrou 11 99757-1221 (acrescentado) (pedido Rafael (volta do 1221))
   // 22/11: saiu 11 99935-1012 (pedido automático, número banido)
@@ -70,7 +70,7 @@ export const MENSAGEM_INICIAL = `${ORIGENS.site.tag} - ${ASSUNTO}`;
 
 // v4: pool trocado em 2026-09-03. Bump obrigatorio: quem ja tinha o 1120
 // salvo ficaria preso a um numero fora do pool ate limpar o navegador.
-const CHAVE_STICKY = 'ab_ig_wpp_v30';
+const CHAVE_STICKY = 'ab_ig_wpp_v31';
 
 export function escolherNumero() {
   try {
